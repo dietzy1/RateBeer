@@ -1,0 +1,26 @@
+App requirements The app project has a list of mandatory requirements
+
+Mandatory requirements:
+
+Language: Must be Kotlin based.
+Frameworks: Must use asynchronous programming by co-routines Frameworks: Must use Jetpack compose for UI Frameworks: Must contain some Compose Navigation, but of course activities can be used also. Complexity: Must contain at least four screens not counting sign-in and out Additional Technology: Must support Firebase Authentication Must persist (more than users) in Firestore database Must use external HTTP API and a http client to call it ( Not by some SDK) Must contain one of the following additional technologies Firebase storage for storing images from say camera Firebase notifications Firebase real-time updates Or some other technology of comparable complexity
+
+App vision The Beer-tasting app is designed to host a social beer tasting experience. It allows multiple users to join a shared session, simultaneously rate a selected beer and then view the group’s average rating. The group’s verdict of the beer is then compared to the public opinion, sourced from the popular Untappd platform.
+
+The app will use Jetpack Compose for UI and Navigation The language of the app will be Kotlin Firebase will be used for authentication (registration, login, session management) Firestore will be used to persist data such as: Group session details User ratings Group rating result Real-time updates (like showing participants in the lobby/updating state of group etc.) Untappd API will be used via an HTTP client to: Search beers by name Retrieve beer details like the Untappd rating Kotlin coroutines will be used for: Network calls to the Untappd API Interactions with Firebase Ensuring a responsive UI
+
+--Screens that must be implemented
+Logged out screen
+ - should show a Login and Register button at the bottum of the screen. Above is a template image.
+
+Register screen
+ - Should show a go back navigation button, a Register title and 3 input fields and a next button.
+
+Log in screen
+ - Should show a go back navigation button, a log in title and 2 input fields and a next button.
+
+ Main screen
+ - Should show a logo and a create group button some devider line with or in the middle and then a input field and join group button
+
+lobby screen
+ - Should show a go back navigation button some text that highlights what the pin numer is, and show participants. At the button there should be a button find beer to taste.
