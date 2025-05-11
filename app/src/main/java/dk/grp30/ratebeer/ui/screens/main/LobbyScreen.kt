@@ -48,7 +48,8 @@ data class Participant(val id: String, val name: String)
 @Composable
 fun LobbyScreen(
     groupId: String,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onFindBeerClick: () -> Unit
 ) {
     // In a real app, this would be populated from Firebase
     val participants = remember {
@@ -171,8 +172,8 @@ fun LobbyScreen(
             Button(
                 onClick = {
                     isLoading = true
-                    // In a real app, this would navigate to a beer search screen
-                    // For demo purposes, we just show loading
+                    // In a real app, we'd want to do any cleanup or preparation before navigating
+                    onFindBeerClick()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
