@@ -58,6 +58,7 @@ fun RateBeerNavGraph(navController: NavHostController) {
                 onLoginSuccess = { navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
                     popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
                 }},
+                onNavigateToSignup= {navController.navigate(RateBeerDestinations.REGISTER_ROUTE)},
                 authRepository = authRepository
             )
         }
@@ -68,6 +69,7 @@ fun RateBeerNavGraph(navController: NavHostController) {
                 onRegistrationSuccess = { navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
                     popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
                 }},
+                onNavigateToLogin = {navController.navigate(RateBeerDestinations.LOGIN_ROUTE)},
                 authRepository = authRepository
             )
         }

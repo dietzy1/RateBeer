@@ -1,19 +1,35 @@
 package dk.grp30.ratebeer.ui.screens.main
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.LocalDrink
+import androidx.compose.material.icons.rounded.Numbers
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,6 +40,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,8 +49,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
@@ -48,15 +70,39 @@ fun MainScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     
+    val colorScheme = MaterialTheme.colorScheme
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("RateBeer") },
+                title = { 
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.LocalDrink,
+                            contentDescription = null,
+                            tint = colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "RateBeer",
+                            color = colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorScheme.primaryContainer,
+                    titleContentColor = colorScheme.onPrimaryContainer
+                ),
                 actions = {
                     IconButton(onClick = onLogout) {
                         Icon(
                             imageVector = Icons.Default.Logout,
-                            contentDescription = "Logout"
+                            contentDescription = "Logout",
+                            tint = colorScheme.primary
                         )
                     }
                 }
@@ -64,118 +110,279 @@ fun MainScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        // Main content with background gradient
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            // App logo or name
-            Text(
-                text = "RateBeer",
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Text(
-                text = "Social Beer Tasting Experience",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            // Create group card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Create a Group",
-                        style = MaterialTheme.typography.titleMedium
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            colorScheme.background,
+                            colorScheme.surface
+                        )
                     )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Button(
-                        onClick = {
-                            // Generate a random 6-digit code
-                            val randomCode = String.format("%06d", Random.nextInt(1000000))
-                            onCreateGroup(randomCode)
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // App logo and intro
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(colorScheme.primary)
+                        .padding(20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.LocalDrink,
+                        contentDescription = "RateBeer Logo",
+                        tint = colorScheme.onPrimary,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Welcome to RateBeer",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = colorScheme.primary
+                )
+                
+                Text(
+                    text = "Social Beer Tasting Experience",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // Create group card
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = colorScheme.surface
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Create Group")
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(colorScheme.primaryContainer)
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = null,
+                                    tint = colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            
+                            Spacer(modifier = Modifier.width(16.dp))
+                            
+                            Column {
+                                Text(
+                                    text = "Create a Group Session",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorScheme.onSurface
+                                )
+                                
+                                Text(
+                                    text = "Host a new beer tasting event",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+                        
+                        Button(
+                            onClick = {
+                                // Generate a random 6-digit code
+                                val randomCode = String.format("%06d", Random.nextInt(1000000))
+                                onCreateGroup(randomCode)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorScheme.primary,
+                                contentColor = colorScheme.onPrimary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Groups,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Create New Group", fontSize = 16.sp)
+                        }
                     }
                 }
-            }
-            
-            Divider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 24.dp)
-            )
-            
-            // Join group card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Divider(
+                        modifier = Modifier.weight(1f),
+                        color = colorScheme.outlineVariant
+                    )
                     Text(
-                        text = "Join a Group",
-                        style = MaterialTheme.typography.titleMedium
+                        text = " OR ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    OutlinedTextField(
-                        value = groupCode,
-                        onValueChange = { 
-                            // Only allow digits and limit to 6 characters
-                            if (it.length <= 6 && it.all { char -> char.isDigit() }) {
-                                groupCode = it
+                    Divider(
+                        modifier = Modifier.weight(1f),
+                        color = colorScheme.outlineVariant
+                    )
+                }
+                
+                // Join group card
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = colorScheme.surface
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .background(colorScheme.secondaryContainer)
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Numbers,
+                                    contentDescription = null,
+                                    tint = colorScheme.secondary,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
-                        },
-                        label = { Text("Enter 6-digit code") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Button(
-                        onClick = {
-                            if (groupCode.length == 6) {
-                                onJoinGroup(groupCode)
-                            } else {
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Please enter a valid 6-digit code")
+                            
+                            Spacer(modifier = Modifier.width(16.dp))
+                            
+                            Column {
+                                Text(
+                                    text = "Join a Group Session",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colorScheme.onSurface
+                                )
+                                
+                                Text(
+                                    text = "Enter 6-digit group code to join",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+                        
+                        OutlinedTextField(
+                            value = groupCode,
+                            onValueChange = { 
+                                // Only allow digits and limit to 6 characters
+                                if (it.length <= 6 && it.all { char -> char.isDigit() }) {
+                                    groupCode = it
+                                }
+                            },
+                            label = { Text("Enter 6-digit code") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            trailingIcon = {
+                                if (groupCode.length == 6) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = colorScheme.primary
+                                    )
                                 }
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = groupCode.length == 6
-                    ) {
-                        Text("Join Group")
-                        Icon(
-                            imageVector = Icons.Default.ArrowForward,
-                            contentDescription = "Join",
-                            modifier = Modifier.padding(start = 8.dp)
                         )
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+                        
+                        Button(
+                            onClick = {
+                                if (groupCode.length == 6) {
+                                    onJoinGroup(groupCode)
+                                } else {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Please enter a valid 6-digit code")
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            enabled = groupCode.length == 6,
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorScheme.secondary,
+                                contentColor = colorScheme.onSecondary,
+                                disabledContainerColor = colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                                disabledContentColor = colorScheme.onSecondaryContainer.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Text("Join Group", fontSize = 16.sp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.ArrowForward,
+                                contentDescription = "Join",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
