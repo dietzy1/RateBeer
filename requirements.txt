@@ -24,3 +24,12 @@ Log in screen
 
 lobby screen
  - Should show a go back navigation button some text that highlights what the pin numer is, and show participants. At the button there should be a button find beer to taste.
+
+Find beer to rate screen
+ - Should show a go back navigation button, a title called find beer to rate, an input field that requests from untappedAPI the results should be shown in a list. Clicking on an item by the user makes it so all other users are sent to the rate beer screen.
+
+Rate beer screen
+ - Show relevant information about the beer like an image, title and description it should also have a system of awarding stars 1-5 to the beer. Pressing a star sends you to vote ended screen.
+
+ vote ended screen
+ - Shows the beer title and image and the group rating vs untapped rating. At the bottum there should be a rate next beer and leave group. Pressing next beer sends you to find beer to rate. leave group sends you to main screen.

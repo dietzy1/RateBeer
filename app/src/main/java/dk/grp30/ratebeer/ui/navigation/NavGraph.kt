@@ -1,10 +1,13 @@
 package dk.grp30.ratebeer.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dk.grp30.ratebeer.data.api.Beer
+import dk.grp30.ratebeer.data.auth.AuthRepository
+import dk.grp30.ratebeer.di.AuthModule
 import dk.grp30.ratebeer.ui.screens.beer.FindBeerScreen
 import dk.grp30.ratebeer.ui.screens.beer.RateBeerScreen
 import dk.grp30.ratebeer.ui.screens.beer.VoteEndedScreen
@@ -27,6 +30,17 @@ object RateBeerDestinations {
 
 @Composable
 fun RateBeerNavGraph(navController: NavHostController) {
+    val authRepository = AuthModule.provideAuthRepository()
+    
+    // Check if user is already logged in, if so navigate directly to main screen
+    LaunchedEffect(key1 = true) {
+        if (authRepository.isUserLoggedIn) {
+            navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
+                popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
+            }
+        }
+    }
+    
     NavHost(
         navController = navController,
         startDestination = RateBeerDestinations.WELCOME_ROUTE
@@ -43,7 +57,8 @@ fun RateBeerNavGraph(navController: NavHostController) {
                 onNavigateBack = { navController.popBackStack() },
                 onLoginSuccess = { navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
                     popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
-                }}
+                }},
+                authRepository = authRepository
             )
         }
         
@@ -52,17 +67,33 @@ fun RateBeerNavGraph(navController: NavHostController) {
                 onNavigateBack = { navController.popBackStack() },
                 onRegistrationSuccess = { navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
                     popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
-                }}
+                }},
+                authRepository = authRepository
             )
         }
         
         composable(RateBeerDestinations.MAIN_ROUTE) {
+            // Check if the user is authenticated, if not navigate back to welcome screen
+            LaunchedEffect(key1 = true) {
+                if (!authRepository.isUserLoggedIn) {
+                    navController.navigate(RateBeerDestinations.WELCOME_ROUTE) {
+                        popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
+                    }
+                }
+            }
+            
             MainScreen(
                 onCreateGroup = { groupId -> 
                     navController.navigate(RateBeerDestinations.LOBBY_ROUTE.replace("{groupId}", groupId)) 
                 },
                 onJoinGroup = { groupId -> 
                     navController.navigate(RateBeerDestinations.LOBBY_ROUTE.replace("{groupId}", groupId)) 
+                },
+                onLogout = {
+                    authRepository.logout()
+                    navController.navigate(RateBeerDestinations.WELCOME_ROUTE) {
+                        popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
+                    }
                 }
             )
         }
@@ -130,4 +161,4 @@ fun RateBeerNavGraph(navController: NavHostController) {
             )
         }
     }
-} 
+}

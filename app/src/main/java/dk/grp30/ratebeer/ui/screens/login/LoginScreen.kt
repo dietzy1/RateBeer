@@ -41,13 +41,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import dk.grp30.ratebeer.data.auth.AuthRepository
+import dk.grp30.ratebeer.data.auth.AuthResult
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onNavigateBack: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    authRepository: AuthRepository
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -55,6 +58,13 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    
+    // Check if user is already logged in
+    LaunchedEffect(key1 = true) {
+        if (authRepository.isUserLoggedIn) {
+            onLoginSuccess()
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -145,12 +155,19 @@ fun LoginScreen(
                     // Show loading and attempt login
                     isLoading = true
                     
-                    // TODO: Replace with actual Firebase Authentication
-                    // For now, just simulate login success after a delay
+                    // Use Firebase authentication via the repository
                     coroutineScope.launch {
-                        kotlinx.coroutines.delay(1000)
+                        val result = authRepository.login(email, password)
                         isLoading = false
-                        onLoginSuccess()
+                        
+                        when (result) {
+                            is AuthResult.Success -> {
+                                onLoginSuccess()
+                            }
+                            is AuthResult.Error -> {
+                                snackbarHostState.showSnackbar(result.message)
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -167,4 +184,4 @@ fun LoginScreen(
             }
         }
     }
-} 
+}

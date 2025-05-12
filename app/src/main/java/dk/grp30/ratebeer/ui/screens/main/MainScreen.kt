@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -39,7 +41,8 @@ import kotlin.random.Random
 @Composable
 fun MainScreen(
     onCreateGroup: (String) -> Unit,
-    onJoinGroup: (String) -> Unit
+    onJoinGroup: (String) -> Unit,
+    onLogout: () -> Unit
 ) {
     var groupCode by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -48,7 +51,15 @@ fun MainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("RateBeer") }
+                title = { Text("RateBeer") },
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.Default.Logout,
+                            contentDescription = "Logout"
+                        )
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -170,4 +181,4 @@ fun MainScreen(
             }
         }
     }
-} 
+}

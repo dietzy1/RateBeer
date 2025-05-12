@@ -41,13 +41,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import dk.grp30.ratebeer.data.auth.AuthRepository
+import dk.grp30.ratebeer.data.auth.AuthResult
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     onNavigateBack: () -> Unit,
-    onRegistrationSuccess: () -> Unit
+    onRegistrationSuccess: () -> Unit,
+    authRepository: AuthRepository
 ) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -183,12 +186,19 @@ fun RegisterScreen(
                     // Show loading and attempt registration
                     isLoading = true
                     
-                    // TODO: Replace with actual Firebase Authentication
-                    // For now, just simulate registration success after a delay
+                    // Use Firebase authentication via the repository
                     coroutineScope.launch {
-                        kotlinx.coroutines.delay(1000)
+                        val result = authRepository.register(email, password, username)
                         isLoading = false
-                        onRegistrationSuccess()
+                        
+                        when (result) {
+                            is AuthResult.Success -> {
+                                onRegistrationSuccess()
+                            }
+                            is AuthResult.Error -> {
+                                snackbarHostState.showSnackbar(result.message)
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -205,4 +215,4 @@ fun RegisterScreen(
             }
         }
     }
-} 
+}
