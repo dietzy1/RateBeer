@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "REPLACE_WITH_ACTUAL_PROJECT_NUMBER",
-    "project_id": "REPLACE_WITH_ACTUAL_PROJECT_ID",
-    "storage_bucket": "REPLACE_WITH_ACTUAL_STORAGE_BUCKET"
+    "project_number": "338964413705",
+    "project_id": "ratebeer-84163",
+    "storage_bucket": "ratebeer-84163.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "REPLACE_WITH_ACTUAL_MOBILESDK_APP_ID",
+        "mobilesdk_app_id": "1:338964413705:android:9b8376e998627e56fb67d8",
         "android_client_info": {
           "package_name": "dk.grp30.ratebeer"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "REPLACE_WITH_ACTUAL_API_KEY"
+          "current_key": "AIzaSyCEhXZefXvdb2Bqke3fpcfHYOE2R8wowiQ"
         }
       ],
       "services": {
@@ -26,4 +26,4 @@
     }
   ],
   "configuration_version": "1"
-} 
+}
