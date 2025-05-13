@@ -1,7 +1,13 @@
 package dk.grp30.ratebeer.ui.screens.beer
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +19,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.LocalDrink
+import androidx.compose.material.icons.outlined.Percent
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,8 +41,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,13 +54,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.data.api.Beer
-import dk.grp30.ratebeer.data.api.UntappdApiService
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,7 +134,7 @@ fun FindBeerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Find Beer to Rate") },
+                title = { Text("Find Your Beer", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -125,140 +142,190 @@ fun FindBeerScreen(
                             contentDescription = "Navigate Back"
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Search bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Search for beers") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search"
-                    )
-                },
-                trailingIcon = {
-                    if (isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Search bar with improved styling
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    label = { Text("Search beer by name, brewery or style") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(
-                    onSearch = {
-                        if (searchQuery.isNotBlank()) {
-                            isSearching = true
-                            keyboardController?.hide()
-                            
-                            // Use Untappd API service to search for beers
-                            coroutineScope.launch {
-                                try {
-                                    // In a real app, this would be a real API call
-                                    // For demonstration, we're using sample data
-                                    // val result = UntappdApiService.searchBeer(searchQuery)
-                                    // if (result.isSuccess) {
-                                    //     searchResults = result.getOrNull() ?: emptyList()
-                                    // } else {
-                                    //     throw Exception("Failed to search")
-                                    // }
-                                    
-                                    // For demo, just filter sample beers
-                                    kotlinx.coroutines.delay(1000) // Simulate network delay
-                                    searchResults = sampleBeers.filter { 
-                                        it.name.contains(searchQuery, ignoreCase = true) ||
-                                        it.brewery.contains(searchQuery, ignoreCase = true) ||
-                                        it.style.contains(searchQuery, ignoreCase = true)
+                    },
+                    trailingIcon = {
+                        AnimatedVisibility(
+                            visible = isSearching,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            if (searchQuery.isNotBlank()) {
+                                isSearching = true
+                                keyboardController?.hide()
+                                
+                                // Use Untappd API service to search for beers
+                                coroutineScope.launch {
+                                    try {
+                                        // In a real app, this would be a real API call
+                                        // For demonstration, we're using sample data
+                                        
+                                        // For demo, just filter sample beers
+                                        kotlinx.coroutines.delay(1000) // Simulate network delay
+                                        searchResults = sampleBeers.filter { 
+                                            it.name.contains(searchQuery, ignoreCase = true) ||
+                                            it.brewery.contains(searchQuery, ignoreCase = true) ||
+                                            it.style.contains(searchQuery, ignoreCase = true)
+                                        }
+                                        
+                                        if (searchResults.isEmpty()) {
+                                            snackbarHostState.showSnackbar("No beers found matching '$searchQuery'")
+                                        }
+                                    } catch (e: Exception) {
+                                        snackbarHostState.showSnackbar("Error searching: ${e.message}")
+                                    } finally {
+                                        isSearching = false
                                     }
-                                    
-                                    if (searchResults.isEmpty()) {
-                                        snackbarHostState.showSnackbar("No beers found matching '$searchQuery'")
-                                    }
-                                } catch (e: Exception) {
-                                    snackbarHostState.showSnackbar("Error searching: ${e.message}")
-                                } finally {
-                                    isSearching = false
                                 }
                             }
                         }
-                    }
+                    )
                 )
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Search results
-            if (!isSearching) {
-                if (searchResults.isEmpty() && searchQuery.isBlank()) {
-                    // Initial state
-                    Text(
-                        text = "Enter a beer name, brewery, or style to search",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(vertical = 32.dp)
-                    )
-                } else if (searchResults.isEmpty() && searchQuery.isNotBlank()) {
-                    // No results
-                    Text(
-                        text = "No beers found matching '$searchQuery'",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(vertical = 32.dp)
-                    )
-                } else {
-                    // Show results
-                    Text(
-                        text = "Search Results",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp)
-                    )
-                    
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(searchResults) { beer ->
-                            BeerListItem(
-                                beer = beer,
-                                onClick = { onBeerSelected(beer) }
-                            )
-                            Divider()
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Search results with improved visuals
+                if (!isSearching) {
+                    if (searchResults.isEmpty() && searchQuery.isBlank()) {
+                        // Initial state with better visual guidance
+                        EmptyStateView(
+                            message = "Enter a beer name, brewery, or style to discover your next favorite brew",
+                            icon = Icons.Outlined.LocalDrink
+                        )
+                    } else if (searchResults.isEmpty() && searchQuery.isNotBlank()) {
+                        // No results with better visual feedback
+                        EmptyStateView(
+                            message = "No beers found matching '$searchQuery'\nTry another search term",
+                            icon = Icons.Default.Search
+                        )
+                    } else {
+                        // Show results with count
+                        Text(
+                            text = "Found ${searchResults.size} beer${if (searchResults.size != 1) "s" else ""}",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp)
+                        ) {
+                            items(searchResults) { beer ->
+                                BeerListItem(
+                                    beer = beer,
+                                    onClick = { onBeerSelected(beer) }
+                                )
+                            }
                         }
                     }
-                }
-            } else {
-                // Show loading indicator
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Searching for beers...",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
+                } else {
+                    // Show loading indicator with better visual
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Searching for '$searchQuery'...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun EmptyStateView(message: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.size(80.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(40.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -270,57 +337,133 @@ fun BeerListItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text(
-                text = beer.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
             Row(
-                modifier = Modifier.padding(top = 4.dp)
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = beer.brewery,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = beer.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Text(
+                        text = beer.brewery,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
                 
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                Text(
-                    text = "Rating: ${String.format("%.1f", beer.rating)}/5",
-                    style = MaterialTheme.typography.labelMedium
-                )
+                // Rating display with better visual
+                RatingBadge(rating = beer.rating)
             }
             
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Style info row with icons
             Row(
-                modifier = Modifier.padding(top = 4.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                Text(
-                    text = beer.style,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow
-                        .Ellipsis,
+                // Beer style
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.LocalDrink,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = beer.style,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                Text(
-                    text = "ABV: ${String.format("%.1f", beer.abv)}%",
-                    style = MaterialTheme.typography.bodySmall
-                )
+                // ABV percentage
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Percent,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "ABV: ${String.format("%.1f", beer.abv)}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
-} 
+}
+
+@Composable
+fun RatingBadge(rating: Double) {
+    val backgroundColor = when {
+        rating >= 4.5 -> MaterialTheme.colorScheme.primary
+        rating >= 4.0 -> MaterialTheme.colorScheme.primaryContainer
+        rating >= 3.0 -> MaterialTheme.colorScheme.secondaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+    
+    val contentColor = when {
+        rating >= 4.5 -> MaterialTheme.colorScheme.onPrimary
+        rating >= 4.0 -> MaterialTheme.colorScheme.onPrimaryContainer
+        rating >= 3.0 -> MaterialTheme.colorScheme.onSecondaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = backgroundColor,
+        contentColor = contentColor
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = String.format("%.1f", rating),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
