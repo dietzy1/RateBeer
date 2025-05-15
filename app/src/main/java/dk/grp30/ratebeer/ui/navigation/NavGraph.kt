@@ -1,7 +1,7 @@
 package dk.grp30.ratebeer.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+// import androidx.compose.runtime.LaunchedEffect // No longer needed at the NavGraph level
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,27 +16,58 @@ import dk.grp30.ratebeer.ui.screens.main.MainScreen
 import dk.grp30.ratebeer.ui.screens.register.RegisterScreen
 import dk.grp30.ratebeer.ui.screens.welcome.WelcomeScreen
 
-// RateBeerDestinations object remains the same
+object RateBeerDestinations {
+    // Routes without arguments
+    const val WELCOME_ROUTE = "welcome"
+    const val LOGIN_ROUTE = "login"
+    const val REGISTER_ROUTE = "register"
+    const val MAIN_ROUTE = "main"
 
+    // Argument names (good practice to define them as constants)
+    const val ARG_GROUP_ID = "groupId"
+    const val ARG_BEER_ID = "beerId"
+
+    // Routes with arguments - defined with placeholders
+    const val LOBBY_ROUTE_PATTERN = "lobby/{$ARG_GROUP_ID}"
+    const val FIND_BEER_ROUTE_PATTERN = "find_beer/{$ARG_GROUP_ID}"
+    const val RATE_BEER_ROUTE_PATTERN = "rate_beer/{$ARG_GROUP_ID}/{$ARG_BEER_ID}"
+    const val VOTE_ENDED_ROUTE_PATTERN = "vote_ended/{$ARG_GROUP_ID}/{$ARG_BEER_ID}"
+
+    // --- Helper functions to build routes with actual arguments ---
+    // These are very useful for type safety and avoiding string errors when navigating.
+
+    fun lobbyRoute(groupId: String): String {
+        return LOBBY_ROUTE_PATTERN.replace("{$ARG_GROUP_ID}", groupId)
+    }
+
+    fun findBeerRoute(groupId: String): String {
+        return FIND_BEER_ROUTE_PATTERN.replace("{$ARG_GROUP_ID}", groupId)
+    }
+
+    fun rateBeerRoute(groupId: String, beerId: String): String {
+        return RATE_BEER_ROUTE_PATTERN
+            .replace("{$ARG_GROUP_ID}", groupId)
+            .replace("{$ARG_BEER_ID}", beerId)
+    }
+
+    fun voteEndedRoute(groupId: String, beerId: String): String {
+        return VOTE_ENDED_ROUTE_PATTERN
+            .replace("{$ARG_GROUP_ID}", groupId)
+            .replace("{$ARG_BEER_ID}", beerId)
+    }
+}
 @Composable
 fun RateBeerNavGraph(navController: NavHostController) {
-    // val authRepository = AuthModule.provideAuthRepository() // REMOVE THIS
-
-    // Initial auth check and navigation is now handled by WelcomeViewModel
-    // The LaunchedEffect here is no longer needed.
-
     NavHost(
         navController = navController,
-        startDestination = RateBeerDestinations.WELCOME_ROUTE
+        startDestination = RateBeerDestinations.WELCOME_ROUTE // Use constant
     ) {
-        composable(RateBeerDestinations.WELCOME_ROUTE) {
-            // WelcomeScreen now uses its own WelcomeViewModel (obtained via hiltViewModel())
-            // to check auth status and trigger navigation.
+        composable(RateBeerDestinations.WELCOME_ROUTE) { // Use constant
             WelcomeScreen(
-                onLoginClick = { navController.navigate(RateBeerDestinations.LOGIN_ROUTE) },
-                onRegisterClick = { navController.navigate(RateBeerDestinations.REGISTER_ROUTE) },
+                onLoginClick = { navController.navigate(RateBeerDestinations.LOGIN_ROUTE) }, // Use constant
+                onRegisterClick = { navController.navigate(RateBeerDestinations.REGISTER_ROUTE) }, // Use constant
                 onNavigateToMain = {
-                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
+                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) { // Use constant
                         popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -44,54 +75,46 @@ fun RateBeerNavGraph(navController: NavHostController) {
             )
         }
 
-        composable(RateBeerDestinations.LOGIN_ROUTE) {
-            // LoginScreen will use its LoginViewModel (obtained via hiltViewModel())
-            // It will no longer take authRepository directly.
+        composable(RateBeerDestinations.LOGIN_ROUTE) { // Use constant
             LoginScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onLoginSuccess = { // This lambda is called when LoginViewModel signals success
-                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
+                onLoginSuccess = {
+                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) { // Use constant
                         popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
                         launchSingleTop = true
                     }
                 },
-                onNavigateToSignup = { // This lambda is called when LoginViewModel signals to go to register
-                    navController.navigate(RateBeerDestinations.REGISTER_ROUTE) {
-                        // Optional: popUpTo(RateBeerDestinations.LOGIN_ROUTE) { inclusive = true } if you want to clear login from backstack
-                    }
+                onNavigateToSignup = {
+                    navController.navigate(RateBeerDestinations.REGISTER_ROUTE) // Use constant
                 }
-                // authRepository = authRepository // REMOVE THIS
             )
         }
 
-        composable(RateBeerDestinations.REGISTER_ROUTE) {
-            // RegisterScreen will use its RegisterViewModel (obtained via hiltViewModel())
+        composable(RateBeerDestinations.REGISTER_ROUTE) { // Use constant
             RegisterScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onRegistrationSuccess = { // Called when RegisterViewModel signals success
-                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
+                onRegistrationSuccess = {
+                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) { // Use constant
                         popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
                         launchSingleTop = true
                     }
                 },
-                onNavigateToLogin = { // Called when RegisterViewModel signals to go to login
-                    navController.navigate(RateBeerDestinations.LOGIN_ROUTE) {
-                        popUpTo(RateBeerDestinations.REGISTER_ROUTE) { inclusive = true } // Clear register from backstack
+                onNavigateToLogin = {
+                    navController.navigate(RateBeerDestinations.LOGIN_ROUTE) { // Use constant
+                        popUpTo(RateBeerDestinations.REGISTER_ROUTE) { inclusive = true }
                     }
                 }
-                // authRepository = authRepository // REMOVE THIS
             )
         }
 
-        composable(RateBeerDestinations.MAIN_ROUTE) {
-            // MainScreen uses its MainViewModel (obtained via hiltViewModel())
-            // The defensive auth check is now inside MainViewModel.
+        composable(RateBeerDestinations.MAIN_ROUTE) { // Use constant
             MainScreen(
                 onNavigateToLobby = { groupId ->
-                    navController.navigate(RateBeerDestinations.LOBBY_ROUTE.replace("{groupId}", groupId))
+                    // Use helper function for clarity and safety
+                    navController.navigate(RateBeerDestinations.lobbyRoute(groupId))
                 },
-                onNavigateToWelcome = { // Called when MainViewModel signals logout or auth failure
-                    navController.navigate(RateBeerDestinations.WELCOME_ROUTE) {
+                onNavigateToWelcome = {
+                    navController.navigate(RateBeerDestinations.WELCOME_ROUTE) { // Use constant
                         popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -100,61 +123,42 @@ fun RateBeerNavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = RateBeerDestinations.LOBBY_ROUTE,
-            arguments = listOf(navArgument("groupId") { type = NavType.StringType }) // Define argument
-        ) { backStackEntry ->
-            // LobbyScreen will use its LobbyViewModel (obtained via hiltViewModel())
-            // The groupId will be retrieved from SavedStateHandle in LobbyViewModel
-            LobbyScreen(
-                navController = navController // Pass navController for nav events from LobbyViewModel
-                // No need to pass groupId directly if ViewModel handles it
-                // onNavigateBack, onFindBeerClick will be handled by events from LobbyViewModel
-            )
+            route = RateBeerDestinations.LOBBY_ROUTE_PATTERN, // Use pattern for route definition
+            arguments = listOf(navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }) // Use arg constant
+        ) {
+            LobbyScreen(navController = navController)
         }
 
         composable(
-            route = RateBeerDestinations.FIND_BEER_ROUTE,
-            arguments = listOf(navArgument("groupId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            // FindBeerScreen will use its FindBeerViewModel
-            // groupId retrieved from SavedStateHandle in FindBeerViewModel
+            route = RateBeerDestinations.FIND_BEER_ROUTE_PATTERN, // Use pattern
+            arguments = listOf(navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }) // Use arg constant
+        ) {
             FindBeerScreen(
-                // groupId = backStackEntry.arguments?.getString("groupId") ?: "", // ViewModel gets this
-                navController = navController, // For navigation from its ViewModel
+                navController = navController,
                 onNavigateBack = { navController.popBackStack() }
-                // onBeerSelected will be handled by FindBeerViewModel, which then triggers Firestore update.
-                // LobbyViewModel will react to Firestore update.
+                // onBeerSelected will be handled by its ViewModel, which will trigger navigation (likely popBackStack)
+                // or an event that LobbyViewModel observes if FindBeer is a sub-flow of Lobby
             )
         }
 
         composable(
-            route = RateBeerDestinations.RATE_BEER_ROUTE,
+            route = RateBeerDestinations.RATE_BEER_ROUTE_PATTERN, // Use pattern
             arguments = listOf(
-                navArgument("groupId") { type = NavType.StringType },
-                navArgument("beerId") { type = NavType.StringType }
+                navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }, // Use arg constant
+                navArgument(RateBeerDestinations.ARG_BEER_ID) { type = NavType.StringType }  // Use arg constant
             )
-        ) { backStackEntry ->
-            // RateBeerScreen will use its RateBeerViewModel
-            RateBeerScreen(
-                // groupId and beerId retrieved from SavedStateHandle in RateBeerViewModel
-                navController = navController // For navigation from its ViewModel
-                // onVoteSubmitted will be handled by RateBeerViewModel
-            )
+        ) {
+            RateBeerScreen(navController = navController)
         }
 
         composable(
-            route = RateBeerDestinations.VOTE_ENDED_ROUTE,
+            route = RateBeerDestinations.VOTE_ENDED_ROUTE_PATTERN, // Use pattern
             arguments = listOf(
-                navArgument("groupId") { type = NavType.StringType },
-                navArgument("beerId") { type = NavType.StringType }
+                navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }, // Use arg constant
+                navArgument(RateBeerDestinations.ARG_BEER_ID) { type = NavType.StringType }  // Use arg constant
             )
-        ) { backStackEntry ->
-            // VoteEndedScreen will use its VoteEndedViewModel
-            VoteEndedScreen(
-                // groupId and beerId retrieved from SavedStateHandle in VoteEndedViewModel
-                navController = navController // For navigation from its ViewModel
-                // onRateNextBeer and onLeaveGroup will be handled by VoteEndedViewModel
-            )
+        ) {
+            VoteEndedScreen(navController = navController)
         }
     }
 }
