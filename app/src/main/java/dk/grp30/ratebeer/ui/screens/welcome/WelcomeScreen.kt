@@ -1,24 +1,11 @@
 package dk.grp30.ratebeer.ui.screens.welcome
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -26,13 +13,30 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import dk.grp30.ratebeer.R
+import dk.grp30.ratebeer.viewmodel.WelcomeNavEvent
+import dk.grp30.ratebeer.viewmodel.WelcomeViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun WelcomeScreen(
+    viewModel: WelcomeViewModel = hiltViewModel(),
     onLoginClick: () -> Unit,
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    onNavigateToMain: () -> Unit
 ) {
+    LaunchedEffect(key1 = viewModel) {
+        viewModel.navEvent.collectLatest { event ->
+            when (event) {
+                WelcomeNavEvent.ToMain -> {
+                    onNavigateToMain()
+                }
+            }
+        }
+    }
+
+    // The rest of your UI remains the same
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -88,7 +92,7 @@ fun WelcomeScreen(
                     text = "RateBeer",
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.5
+                        fontSize = MaterialTheme.typography.titleLarge.fontSize * 1.5 // Consider MaterialTheme.typography.headlineLarge or displaySmall
                     ),
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center
@@ -123,7 +127,7 @@ fun WelcomeScreen(
                     ) {
                         // Login button with primary color
                         Button(
-                            onClick = onLoginClick,
+                            onClick = onLoginClick, // This remains, triggers navigation to LoginScreen
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
@@ -140,7 +144,7 @@ fun WelcomeScreen(
 
                         // Register as outlined button for visual hierarchy
                         OutlinedButton(
-                            onClick = onRegisterClick,
+                            onClick = onRegisterClick, // This remains, triggers navigation to RegisterScreen
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
@@ -156,12 +160,7 @@ fun WelcomeScreen(
                         }
                     }
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
-
-
-
-
             }
         }
     }

@@ -1,61 +1,19 @@
 package dk.grp30.ratebeer.ui.screens.register
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.LocalDrink
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -64,60 +22,62 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dk.grp30.ratebeer.data.auth.AuthRepository
-import dk.grp30.ratebeer.data.auth.AuthResult
-import kotlinx.coroutines.launch
+import androidx.hilt.navigation.compose.hiltViewModel
+import dk.grp30.ratebeer.R
+import dk.grp30.ratebeer.viewmodel.RegisterNavEvent
+import dk.grp30.ratebeer.viewmodel.RegisterViewModel
+import kotlinx.coroutines.flow.collectLatest
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
+    viewModel: RegisterViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onRegistrationSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit = {}, // New parameter for login navigation
-    authRepository: AuthRepository
+    onNavigateToLogin: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    
-    // Password strength indicator
+
+    val uiState = viewModel.uiState
+
     var passwordStrength by remember { mutableFloatStateOf(0f) }
-    
-    // Calculate password strength when password changes
     fun calculatePasswordStrength(pwd: String): Float {
         if (pwd.isEmpty()) return 0f
-        
         var strength = 0f
-        
-        // Length check
         strength += minOf(0.3f, pwd.length * 0.03f)
-        
-        // Has uppercase
         if (pwd.any { it.isUpperCase() }) strength += 0.2f
-        
-        // Has lowercase
         if (pwd.any { it.isLowerCase() }) strength += 0.2f
-        
-        // Has digit
         if (pwd.any { it.isDigit() }) strength += 0.2f
-        
-        // Has special character
         if (pwd.any { !it.isLetterOrDigit() }) strength += 0.2f
-        
         return minOf(1f, strength)
     }
-    
-    // Update password strength when password changes
-    password.let { 
-        passwordStrength = calculatePasswordStrength(it)
+    LaunchedEffect(password) {
+        passwordStrength = calculatePasswordStrength(password)
     }
-    
+
+    LaunchedEffect(key1 = viewModel.navEvent) {
+        viewModel.navEvent.collectLatest { event ->
+            when (event) {
+                RegisterNavEvent.ToMain -> onRegistrationSuccess()
+                RegisterNavEvent.ToLogin -> onNavigateToLogin()
+            }
+        }
+    }
+
+    LaunchedEffect(key1 = uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearErrorMessage()
+        }
+    }
+
     val colorScheme = MaterialTheme.colorScheme
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -138,7 +98,6 @@ fun RegisterScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        // Main content with background gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -159,8 +118,6 @@ fun RegisterScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                // Logo area
                 Box(
                     modifier = Modifier
                         .size(70.dp)
@@ -176,16 +133,13 @@ fun RegisterScreen(
                         modifier = Modifier.size(36.dp)
                     )
                 }
-                
                 Spacer(modifier = Modifier.height(16.dp))
-                
                 Text(
                     text = "Join RateBeer",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.primary
                 )
-                
                 Text(
                     text = "Create an account to start rating and discovering beers",
                     style = MaterialTheme.typography.bodyMedium,
@@ -193,16 +147,12 @@ fun RegisterScreen(
                     color = colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp)
                 )
-                
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                // Registration card
+
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = colorScheme.surface
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(
@@ -212,61 +162,32 @@ fun RegisterScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Username field with improved styling
                         OutlinedTextField(
                             value = username,
                             onValueChange = { username = it },
                             label = { Text("Username") },
                             modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = "Username",
-                                    tint = colorScheme.primary
-                                )
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Text,
-                                imeAction = ImeAction.Next
-                            ),
+                            leadingIcon = { Icon(Icons.Default.Person, "Username", tint = colorScheme.primary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        
-                        // Email field with improved styling
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
                             label = { Text("Email Address") },
                             modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Email,
-                                    contentDescription = "Email",
-                                    tint = colorScheme.primary
-                                )
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Email,
-                                imeAction = ImeAction.Next
-                            ),
+                            leadingIcon = { Icon(Icons.Default.Email, "Email", tint = colorScheme.primary) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        
-                        // Password field with improved styling
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
                             label = { Text("Password") },
                             modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Lock,
-                                    contentDescription = "Password",
-                                    tint = colorScheme.primary
-                                )
-                            },
+                            leadingIcon = { Icon(Icons.Default.Lock, "Password", tint = colorScheme.primary) },
                             trailingIcon = {
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(
@@ -277,21 +198,16 @@ fun RegisterScreen(
                                 }
                             },
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Password,
-                                imeAction = ImeAction.Done
-                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp)
                         )
-                        
-                        // Password strength indicator
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.Start
                         ) {
                             LinearProgressIndicator(
-                                progress = passwordStrength,
+                                progress = { passwordStrength }, // Use lambda for progress
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(4.dp)
@@ -302,9 +218,7 @@ fun RegisterScreen(
                                     else -> colorScheme.primary
                                 }
                             )
-                            
                             Spacer(modifier = Modifier.height(4.dp))
-                            
                             Text(
                                 text = when {
                                     password.isEmpty() -> "Enter a password"
@@ -321,75 +235,27 @@ fun RegisterScreen(
                                 }
                             )
                         }
-                        
                         Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // Terms & Privacy policy text
                         Text(
                             text = "By signing up, you agree to our Terms of Service and Privacy Policy",
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center,
                             color = colorScheme.onSurfaceVariant
                         )
-                        
                         Spacer(modifier = Modifier.height(8.dp))
-                        
-                        // Register button with animation
                         Button(
                             onClick = {
-                                // Validate inputs
-                                if (username.isBlank() || email.isBlank() || password.isBlank()) {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Please fill in all fields")
-                                    }
-                                    return@Button
-                                }
-                                
-                                // Simple email validation
-                                if (!email.contains("@") || !email.contains(".")) {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Please enter a valid email address")
-                                    }
-                                    return@Button
-                                }
-                                
-                                // Password length validation
-                                if (password.length < 6) {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Password must be at least 6 characters")
-                                    }
-                                    return@Button
-                                }
-                                
-                                // Show loading and attempt registration
-                                isLoading = true
-                                
-                                // Use Firebase authentication via the repository
-                                coroutineScope.launch {
-                                    val result = authRepository.register(email, password, username)
-                                    isLoading = false
-                                    
-                                    when (result) {
-                                        is AuthResult.Success -> {
-                                            onRegistrationSuccess()
-                                        }
-                                        is AuthResult.Error -> {
-                                            snackbarHostState.showSnackbar(result.message)
-                                        }
-                                    }
-                                }
+                                viewModel.registerUser(username, email, password)
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            enabled = !isLoading,
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            enabled = !uiState.isLoading, // Use isLoading from ViewModel's uiState
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = colorScheme.primary,
                                 contentColor = colorScheme.onPrimary
                             )
                         ) {
-                            if (isLoading) {
+                            if (uiState.isLoading) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
                                     color = colorScheme.onPrimary,
@@ -401,10 +267,7 @@ fun RegisterScreen(
                         }
                     }
                 }
-                
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                // Already have an account suggestion
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -415,7 +278,7 @@ fun RegisterScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = colorScheme.onSurfaceVariant
                     )
-                    TextButton(onClick = onNavigateToLogin) {
+                    TextButton(onClick = { viewModel.navigateToLogin() }) {
                         Text(
                             "Sign In",
                             color = colorScheme.primary,
