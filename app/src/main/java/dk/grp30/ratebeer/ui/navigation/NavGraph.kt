@@ -130,15 +130,14 @@ fun RateBeerNavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = RateBeerDestinations.FIND_BEER_ROUTE_PATTERN, // Use pattern
-            arguments = listOf(navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }) // Use arg constant
-        ) {
-            FindBeerScreen(
-                navController = navController,
-                onNavigateBack = { navController.popBackStack() }
-                // onBeerSelected will be handled by its ViewModel, which will trigger navigation (likely popBackStack)
-                // or an event that LobbyViewModel observes if FindBeer is a sub-flow of Lobby
+            route = RateBeerDestinations.RATE_BEER_ROUTE_PATTERN,
+            arguments = listOf(
+                navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType },
+                navArgument(RateBeerDestinations.ARG_BEER_ID) { type = NavType.StringType }
             )
+        ) {
+            // ViewModel gets groupId and beerId from SavedStateHandle
+            RateBeerScreen(navController = navController)
         }
 
         composable(
