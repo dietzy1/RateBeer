@@ -142,13 +142,11 @@ fun RateBeerNavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = RateBeerDestinations.RATE_BEER_ROUTE_PATTERN, // Use pattern
-            arguments = listOf(
-                navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }, // Use arg constant
-                navArgument(RateBeerDestinations.ARG_BEER_ID) { type = NavType.StringType }  // Use arg constant
-            )
+            route = RateBeerDestinations.FIND_BEER_ROUTE_PATTERN, // e.g., "find_beer/{groupId}"
+            arguments = listOf(navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType })
         ) {
-            RateBeerScreen(navController = navController)
+            // ViewModel gets groupId from SavedStateHandle
+            FindBeerScreen(navController = navController)
         }
 
         composable(

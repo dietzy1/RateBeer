@@ -45,7 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.R
-import dk.grp30.ratebeer.data.api.Beer
+import dk.grp30.ratebeer.data.models.Beer
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.random.Random

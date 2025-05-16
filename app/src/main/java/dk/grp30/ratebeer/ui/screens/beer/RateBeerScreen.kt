@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Card
@@ -46,8 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.R
-import dk.grp30.ratebeer.data.api.Beer
-import dk.grp30.ratebeer.data.api.UntappdApiService
+import dk.grp30.ratebeer.data.models.Beer
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
