@@ -1,320 +1,207 @@
 package dk.grp30.ratebeer.ui.screens.beer
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import dk.grp30.ratebeer.R
-import dk.grp30.ratebeer.data.api.Beer
-import kotlinx.coroutines.launch
+import dk.grp30.ratebeer.ui.navigation.RateBeerDestinations
+import dk.grp30.ratebeer.viewmodel.VoteEndedViewModel
+import dk.grp30.ratebeer.viewmodel.VoteEndedNavEvent
+import kotlinx.coroutines.flow.collectLatest
+import java.util.Locale
+import kotlin.math.max
 import kotlin.math.roundToInt
-import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoteEndedScreen(
-    groupId: String,
-    beerId: String,
-    onRateNextBeer: () -> Unit,
-    onLeaveGroup: () -> Unit
+    navController: NavController, // For handling navigation events
+    viewModel: VoteEndedViewModel = hiltViewModel()
+    // groupId: String, // ViewModel gets these from SavedStateHandle
+    // beerId: String,
+    // onRateNextBeer: () -> Unit, // Handled by ViewModel nav event
+    // onLeaveGroup: () -> Unit    // Handled by ViewModel nav event
 ) {
-    var isLoading by remember { mutableStateOf(true) }
-    var beer by remember { mutableStateOf<Beer?>(null) }
-    var groupRating by remember { mutableStateOf(0.0) }
+    // Collect UI state from ViewModel
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle() // Or your preferred working collector
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    
-    // For demonstration purposes, use sample data
-    LaunchedEffect(beerId) {
-        // In a real app, fetch beer details and group rating from Firebase
-        try {
-            // Simulate network delay
-            kotlinx.coroutines.delay(1500)
-            
-            // Sample data for demo purposes
-            beer = when (beerId) {
-                "1" -> Beer(
-                    id = "1",
-                    name = "Heineken",
-                    brewery = "Heineken International",
-                    style = "Pale Lager",
-                    abv = 5.0,
-                    rating = 3.2,
-                    imageUrl = "https://example.com/heineken.jpg"
-                )
-                "2" -> Beer(
-                    id = "2",
-                    name = "Guinness Draught",
-                    brewery = "Guinness",
-                    style = "Irish Dry Stout",
-                    abv = 4.2,
-                    rating = 4.1,
-                    imageUrl = "https://example.com/guinness.jpg"
-                )
-                "3" -> Beer(
-                    id = "3",
-                    name = "Corona Extra",
-                    brewery = "Grupo Modelo",
-                    style = "Pale Lager",
-                    abv = 4.5,
-                    rating = 3.0,
-                    imageUrl = "https://example.com/corona.jpg"
-                )
-                "4" -> Beer(
-                    id = "4",
-                    name = "Sierra Nevada Pale Ale",
-                    brewery = "Sierra Nevada Brewing Co.",
-                    style = "American Pale Ale",
-                    abv = 5.6,
-                    rating = 4.3,
-                    imageUrl = "https://example.com/sierra.jpg"
-                )
-                "5" -> Beer(
-                    id = "5",
-                    name = "Duvel",
-                    brewery = "Duvel Moortgat",
-                    style = "Belgian Strong Golden Ale",
-                    abv = 8.5,
-                    rating = 4.5,
-                    imageUrl = "https://example.com/duvel.jpg"
-                )
-                else -> null
+
+    // Observe navigation events from ViewModel
+    LaunchedEffect(key1 = viewModel.navEvent) {
+        viewModel.navEvent.collectLatest { event ->
+            when (event) {
+                is VoteEndedNavEvent.ToFindBeer -> {
+                    navController.navigate(RateBeerDestinations.findBeerRoute(event.groupId)) {
+                        // Pop this VoteEndedScreen instance from the back stack
+                        popUpTo(RateBeerDestinations.voteEndedRoute(viewModel.groupId, viewModel.beerId)) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+                is VoteEndedNavEvent.ToMain -> {
+                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             }
-            
-            if (beer == null) {
-                throw Exception("Beer not found")
-            }
-            
-            // Generate a random group rating for demo
-            // In a real app, this would be fetched from Firestore
-            groupRating = (Random.nextDouble() * 2 + 2).roundTo(1) // Random between 2 and 4
-            
-        } catch (e: Exception) {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Error loading results: ${e.message}")
-            }
-        } finally {
-            isLoading = false
         }
     }
-    
+
+    // Observe error messages for Snackbar (from ViewModel's uiState.errorMessage)
+    LaunchedEffect(key1 = uiState.errorMessage) {
+        uiState.errorMessage?.let { message: String ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearErrorMessage() // Clear error in ViewModel after showing
+        }
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Vote Results") }
-            )
+            TopAppBar(title = { Text("Vote Results") })
+            // TODO: Add NavigationIcon for back if desired, e.g., to Lobby or Main
+            // This could call viewModel.onLeaveGroupClicked() or just navController.popBackStack()
+            // For now, "Leave Group" button is at the bottom.
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentAlignment = Alignment.Center
         ) {
-            if (isLoading) {
-                // Loading state
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp)
-                    )
+            if (uiState.isLoading) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Loading results...")
                 }
-            } else if (beer != null) {
-                // Results content
+            } else if (uiState.errorMessage != null && uiState.beer == null) {
+                // Error when beer details couldn't be loaded (e.g. "Beer not found")
+                Text(
+                    text = "Could not load beer details: ${uiState.errorMessage}",
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(16.dp)
+                )
+            } else if (uiState.beer != null) {
+                val beer = uiState.beer!! // Safe due to the null check
+                val groupRatingDisplay = uiState.groupRating // This is Double?
+                val publicRatingDisplay = beer.rating // This is Double from Beer model
+
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState()),
+                    modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Beer image
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                    ) {
+                    Card(modifier = Modifier.fillMaxWidth().height(180.dp)) {
+                        // TODO: Replace with Coil or Glide for beer.imageUrl if it's a real URL
                         Image(
                             painter = painterResource(id = R.drawable.beer_placeholder),
-                            contentDescription = beer?.name,
+                            contentDescription = beer.name,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
                         )
                     }
-                    
                     Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Beer name
-                    Text(
-                        text = beer?.name ?: "",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                    
+                    Text(beer.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(32.dp))
-                    
-                    // Results comparison
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Rating Results",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.fillMaxWidth(),
-                                textAlign = TextAlign.Center
-                            )
-                            
+
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text("Rating Results", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                             Spacer(modifier = Modifier.height(24.dp))
-                            
+
                             // Group rating
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            if (groupRatingDisplay != null) {
+                                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Group Rating:", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                                    RatingDisplay(rating = groupRatingDisplay, starSize = 24)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(String.format(Locale.US, "%.1f", groupRatingDisplay), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(modifier = Modifier.height(16.dp))
+                            } else if (uiState.errorMessage != null && uiState.groupRating == null) {
+                                // Specific error for group rating if beer details loaded but group rating didn't
                                 Text(
-                                    text = "Group Rating:",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f)
+                                    "Could not load group rating: ${uiState.errorMessage}", // Show the specific error
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                    color = MaterialTheme.colorScheme.error
                                 )
-                                
-                                RatingDisplay(
-                                    rating = groupRating,
-                                    starSize = 24
+                            } else {
+                                // Generic "not available" if no specific error and no rating
+                                Text(
+                                    "Group rating not available.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                                 )
-                                
+                            }
+
+                            // Public ("Untappd") rating
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text("Public Rating:", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                                RatingDisplay(rating = publicRatingDisplay, starSize = 24)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                
-                                Text(
-                                    text = String.format("%.1f", groupRating),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text(String.format(Locale.US, "%.1f", publicRatingDisplay), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                             }
-                            
                             Spacer(modifier = Modifier.height(16.dp))
-                            
-                            // Untappd rating
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Untappd Rating:",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                
-                                RatingDisplay(
-                                    rating = beer?.rating ?: 0.0,
-                                    starSize = 24
-                                )
-                                
-                                Spacer(modifier = Modifier.width(8.dp))
-                                
-                                Text(
-                                    text = String.format("%.1f", beer?.rating),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
+
+                            // Comparison text (only if group rating is available)
+                            if (groupRatingDisplay != null) {
+                                val difference = (groupRatingDisplay - publicRatingDisplay).roundTo(1)
+                                val comparisonText = when {
+                                    difference > 0.5 -> "Your group rated this beer higher than the public average!"
+                                    difference < -0.5 -> "Your group rated this beer lower than the public average."
+                                    else -> "Your group's rating is similar to the public average."
+                                }
+                                Text(comparisonText, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                             }
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            // Comparison text
-                            val difference = (groupRating - (beer?.rating ?: 0.0)).roundTo(1)
-                            val comparisonText = when {
-                                difference > 0.5 -> "Your group rated this beer higher than the average Untappd user!"
-                                difference < -0.5 -> "Your group rated this beer lower than the average Untappd user."
-                                else -> "Your group's rating is similar to the Untappd community."
-                            }
-                            
-                            Text(
-                                text = comparisonText,
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
                         }
                     }
-                    
-                    Spacer(modifier = Modifier.weight(1f))
-                    
-                    // Action buttons
+                    Spacer(modifier = Modifier.weight(1f)) // Pushes buttons to bottom
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        OutlinedButton(
-                            onClick = onLeaveGroup,
-                            modifier = Modifier.weight(1f)
-                        ) {
+                        OutlinedButton(onClick = { viewModel.onLeaveGroupClicked() }, modifier = Modifier.weight(1f)) {
                             Text("Leave Group")
                         }
-                        
-                        Button(
-                            onClick = onRateNextBeer,
-                            modifier = Modifier.weight(1f)
-                        ) {
+                        Button(onClick = { viewModel.onRateNextBeerClicked() }, modifier = Modifier.weight(1f)) {
                             Text("Rate Next Beer")
                         }
                     }
                 }
+            } else {
+                // This case implies beer is null, not loading, and no specific errorMessage about beer loading failed.
+                // ViewModel's init logic should set an error if IDs are blank.
+                Text("No results available or an error occurred.", textAlign = TextAlign.Center)
             }
         }
     }
 }
 
+// Your RatingDisplay and roundTo extension functions (ensure they are defined or imported)
 @Composable
 fun RatingDisplay(
     rating: Double,
@@ -325,40 +212,39 @@ fun RatingDisplay(
         verticalAlignment = Alignment.CenterVertically
     ) {
         for (i in 1..maxRating) {
-            val starFill = minOf(maxOf(rating - (i - 1), 0.0), 1.0)
+            val starFill = minOf(max(rating - (i - 1), 0.0), 1.0)
             if (starFill == 1.0) {
                 Icon(
                     imageVector = Icons.Filled.Star,
                     contentDescription = null,
-                    tint = Color(0xFFAB7B00),
+                    tint = Color(0xFFFFAA00),
                     modifier = Modifier.size(starSize.dp)
                 )
             } else if (starFill == 0.0) {
                 Icon(
-                    imageVector = Icons.Outlined.Star,
+                    imageVector = Icons.Outlined.Star, // Using outlined star from Material Icons
                     contentDescription = null,
-                    tint = Color.Gray,
+                    tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.size(starSize.dp)
                 )
-            } else {
-                Box(
-                    modifier = Modifier.size(starSize.dp)
-                ) {
+            } else { // Partial star
+                Box(modifier = Modifier.size(starSize.dp)) {
                     Icon(
                         imageVector = Icons.Outlined.Star,
                         contentDescription = null,
-                        tint = Color.Gray,
+                        tint = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.fillMaxSize()
                     )
                     Box(
                         modifier = Modifier
-                            .fillMaxSize(starFill.toFloat())
-                            .align(Alignment.CenterStart)
+                            .fillMaxHeight()
+                            .fillMaxWidth(starFill.toFloat())
+                            .clip(RectangleShape)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Star,
                             contentDescription = null,
-                            tint = Color(0xFFAB7B00),
+                            tint = Color(0xFFFFAA00),
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -369,7 +255,8 @@ fun RatingDisplay(
 }
 
 fun Double.roundTo(decimals: Int): Double {
+    if (decimals < 0) throw IllegalArgumentException("Decimal places must be non-negative")
     var multiplier = 1.0
     repeat(decimals) { multiplier *= 10 }
     return (this * multiplier).roundToInt() / multiplier
-} 
+}

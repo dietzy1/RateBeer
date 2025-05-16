@@ -5,7 +5,7 @@ import androidx.navigation.compose.rememberNavController
 import dk.grp30.ratebeer.ui.navigation.RateBeerNavGraph
 
 @Composable
-fun RateBeerApp() {
+fun MainAppContent() {
     val navController = rememberNavController()
     RateBeerNavGraph(navController = navController)
-} 
+}

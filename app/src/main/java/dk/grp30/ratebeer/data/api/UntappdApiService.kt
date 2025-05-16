@@ -7,17 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
+import dk.grp30.ratebeer.data.models.Beer
 
-// These models would be expanded in a real app
-data class Beer(
-    val id: String,
-    val name: String,
-    val brewery: String,
-    val style: String,
-    val abv: Double,
-    val rating: Double,
-    val imageUrl: String
-)
 
 data class SearchResponse(
     val beers: List<Beer>

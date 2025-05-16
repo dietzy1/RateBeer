@@ -1,13 +1,12 @@
 package dk.grp30.ratebeer.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+// import androidx.compose.runtime.LaunchedEffect // No longer needed at the NavGraph level
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import dk.grp30.ratebeer.data.api.Beer
-import dk.grp30.ratebeer.data.auth.AuthRepository
-import dk.grp30.ratebeer.di.AuthModule
+import androidx.navigation.navArgument
 import dk.grp30.ratebeer.ui.screens.beer.FindBeerScreen
 import dk.grp30.ratebeer.ui.screens.beer.RateBeerScreen
 import dk.grp30.ratebeer.ui.screens.beer.VoteEndedScreen
@@ -18,149 +17,145 @@ import dk.grp30.ratebeer.ui.screens.register.RegisterScreen
 import dk.grp30.ratebeer.ui.screens.welcome.WelcomeScreen
 
 object RateBeerDestinations {
+    // Routes without arguments
     const val WELCOME_ROUTE = "welcome"
     const val LOGIN_ROUTE = "login"
     const val REGISTER_ROUTE = "register"
     const val MAIN_ROUTE = "main"
-    const val LOBBY_ROUTE = "lobby/{groupId}"
-    const val FIND_BEER_ROUTE = "find_beer/{groupId}"
-    const val RATE_BEER_ROUTE = "rate_beer/{groupId}/{beerId}"
-    const val VOTE_ENDED_ROUTE = "vote_ended/{groupId}/{beerId}"
-}
 
+    // Argument names (good practice to define them as constants)
+    const val ARG_GROUP_ID = "groupId"
+    const val ARG_BEER_ID = "beerId"
+
+    // Routes with arguments - defined with placeholders
+    const val LOBBY_ROUTE_PATTERN = "lobby/{$ARG_GROUP_ID}"
+    const val FIND_BEER_ROUTE_PATTERN = "find_beer/{$ARG_GROUP_ID}"
+    const val RATE_BEER_ROUTE_PATTERN = "rate_beer/{$ARG_GROUP_ID}/{$ARG_BEER_ID}"
+    const val VOTE_ENDED_ROUTE_PATTERN = "vote_ended/{$ARG_GROUP_ID}/{$ARG_BEER_ID}"
+
+    // --- Helper functions to build routes with actual arguments ---
+    // These are very useful for type safety and avoiding string errors when navigating.
+
+    fun lobbyRoute(groupId: String): String {
+        return LOBBY_ROUTE_PATTERN.replace("{$ARG_GROUP_ID}", groupId)
+    }
+
+    fun findBeerRoute(groupId: String): String {
+        return FIND_BEER_ROUTE_PATTERN.replace("{$ARG_GROUP_ID}", groupId)
+    }
+
+    fun rateBeerRoute(groupId: String, beerId: String): String {
+        return RATE_BEER_ROUTE_PATTERN
+            .replace("{$ARG_GROUP_ID}", groupId)
+            .replace("{$ARG_BEER_ID}", beerId)
+    }
+
+    fun voteEndedRoute(groupId: String, beerId: String): String {
+        return VOTE_ENDED_ROUTE_PATTERN
+            .replace("{$ARG_GROUP_ID}", groupId)
+            .replace("{$ARG_BEER_ID}", beerId)
+    }
+}
 @Composable
 fun RateBeerNavGraph(navController: NavHostController) {
-    val authRepository = AuthModule.provideAuthRepository()
-    
-    // Check if user is already logged in, if so navigate directly to main screen
-    LaunchedEffect(key1 = true) {
-        if (authRepository.isUserLoggedIn) {
-            navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
-                popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
-            }
-        }
-    }
-    
     NavHost(
         navController = navController,
-        startDestination = RateBeerDestinations.WELCOME_ROUTE
+        startDestination = RateBeerDestinations.WELCOME_ROUTE // Use constant
     ) {
-        composable(RateBeerDestinations.WELCOME_ROUTE) {
+        composable(RateBeerDestinations.WELCOME_ROUTE) { // Use constant
             WelcomeScreen(
-                onLoginClick = { navController.navigate(RateBeerDestinations.LOGIN_ROUTE) },
-                onRegisterClick = { navController.navigate(RateBeerDestinations.REGISTER_ROUTE) }
+                onLoginClick = { navController.navigate(RateBeerDestinations.LOGIN_ROUTE) }, // Use constant
+                onRegisterClick = { navController.navigate(RateBeerDestinations.REGISTER_ROUTE) }, // Use constant
+                onNavigateToMain = {
+                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) { // Use constant
+                        popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
-        
-        composable(RateBeerDestinations.LOGIN_ROUTE) {
+
+        composable(RateBeerDestinations.LOGIN_ROUTE) { // Use constant
             LoginScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onLoginSuccess = { navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
-                    popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
-                }},
-                onNavigateToSignup= {navController.navigate(RateBeerDestinations.REGISTER_ROUTE)},
-                authRepository = authRepository
+                onLoginSuccess = {
+                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) { // Use constant
+                        popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToSignup = {
+                    navController.navigate(RateBeerDestinations.REGISTER_ROUTE) // Use constant
+                }
             )
         }
-        
-        composable(RateBeerDestinations.REGISTER_ROUTE) {
+
+        composable(RateBeerDestinations.REGISTER_ROUTE) { // Use constant
             RegisterScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onRegistrationSuccess = { navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
-                    popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
-                }},
-                onNavigateToLogin = {navController.navigate(RateBeerDestinations.LOGIN_ROUTE)},
-                authRepository = authRepository
-            )
-        }
-        
-        composable(RateBeerDestinations.MAIN_ROUTE) {
-            // Check if the user is authenticated, if not navigate back to welcome screen
-            LaunchedEffect(key1 = true) {
-                if (!authRepository.isUserLoggedIn) {
-                    navController.navigate(RateBeerDestinations.WELCOME_ROUTE) {
-                        popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
+                onRegistrationSuccess = {
+                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) { // Use constant
+                        popUpTo(RateBeerDestinations.WELCOME_ROUTE) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate(RateBeerDestinations.LOGIN_ROUTE) { // Use constant
+                        popUpTo(RateBeerDestinations.REGISTER_ROUTE) { inclusive = true }
                     }
                 }
-            }
-            
+            )
+        }
+
+        composable(RateBeerDestinations.MAIN_ROUTE) { // Use constant
             MainScreen(
-                onCreateGroup = { groupId -> 
-                    navController.navigate(RateBeerDestinations.LOBBY_ROUTE.replace("{groupId}", groupId)) 
+                onNavigateToLobby = { groupId ->
+                    // Use helper function for clarity and safety
+                    navController.navigate(RateBeerDestinations.lobbyRoute(groupId))
                 },
-                onJoinGroup = { groupId -> 
-                    navController.navigate(RateBeerDestinations.LOBBY_ROUTE.replace("{groupId}", groupId)) 
-                },
-                onLogout = {
-                    authRepository.logout()
-                    navController.navigate(RateBeerDestinations.WELCOME_ROUTE) {
+                onNavigateToWelcome = {
+                    navController.navigate(RateBeerDestinations.WELCOME_ROUTE) { // Use constant
                         popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
+                        launchSingleTop = true
                     }
                 }
             )
         }
-        
-        composable(RateBeerDestinations.LOBBY_ROUTE) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
-            LobbyScreen(
-                groupId = groupId,
-                onNavigateBack = { navController.popBackStack() },
-                onFindBeerClick = {
-                    navController.navigate(RateBeerDestinations.FIND_BEER_ROUTE.replace("{groupId}", groupId))
-                }
-            )
+
+        composable(
+            route = RateBeerDestinations.LOBBY_ROUTE_PATTERN, // Use pattern for route definition
+            arguments = listOf(navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }) // Use arg constant
+        ) {
+            LobbyScreen(navController = navController)
         }
-        
-        composable(RateBeerDestinations.FIND_BEER_ROUTE) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
-            FindBeerScreen(
-                groupId = groupId,
-                onNavigateBack = { navController.popBackStack() },
-                onBeerSelected = { beer ->
-                    navController.navigate(
-                        RateBeerDestinations.RATE_BEER_ROUTE
-                            .replace("{groupId}", groupId)
-                            .replace("{beerId}", beer.id)
-                    )
-                }
+
+        composable(
+            route = RateBeerDestinations.RATE_BEER_ROUTE_PATTERN,
+            arguments = listOf(
+                navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType },
+                navArgument(RateBeerDestinations.ARG_BEER_ID) { type = NavType.StringType }
             )
+        ) {
+            // ViewModel gets groupId and beerId from SavedStateHandle
+            RateBeerScreen(navController = navController)
         }
-        
-        composable(RateBeerDestinations.RATE_BEER_ROUTE) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
-            val beerId = backStackEntry.arguments?.getString("beerId") ?: ""
-            RateBeerScreen(
-                groupId = groupId,
-                beerId = beerId,
-                onVoteSubmitted = { rating ->
-                    navController.navigate(
-                        RateBeerDestinations.VOTE_ENDED_ROUTE
-                            .replace("{groupId}", groupId)
-                            .replace("{beerId}", beerId)
-                    ) {
-                        popUpTo(RateBeerDestinations.FIND_BEER_ROUTE) { inclusive = true }
-                    }
-                }
-            )
+
+        composable(
+            route = RateBeerDestinations.FIND_BEER_ROUTE_PATTERN, // e.g., "find_beer/{groupId}"
+            arguments = listOf(navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType })
+        ) {
+            // ViewModel gets groupId from SavedStateHandle
+            FindBeerScreen(navController = navController)
         }
-        
-        composable(RateBeerDestinations.VOTE_ENDED_ROUTE) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
-            val beerId = backStackEntry.arguments?.getString("beerId") ?: ""
-            VoteEndedScreen(
-                groupId = groupId,
-                beerId = beerId,
-                onRateNextBeer = {
-                    navController.navigate(
-                        RateBeerDestinations.FIND_BEER_ROUTE.replace("{groupId}", groupId)
-                    )
-                },
-                onLeaveGroup = {
-                    navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
-                        popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
-                    }
-                }
+
+        composable(
+            route = RateBeerDestinations.VOTE_ENDED_ROUTE_PATTERN, // Use pattern
+            arguments = listOf(
+                navArgument(RateBeerDestinations.ARG_GROUP_ID) { type = NavType.StringType }, // Use arg constant
+                navArgument(RateBeerDestinations.ARG_BEER_ID) { type = NavType.StringType }  // Use arg constant
             )
+        ) {
+            VoteEndedScreen(navController = navController)
         }
     }
 }
