@@ -40,15 +40,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
 import dk.grp30.ratebeer.R
 import dk.grp30.ratebeer.data.api.Beer
+import dk.grp30.ratebeer.data.api.PunkApiService
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,82 +65,47 @@ fun VoteEndedScreen(
     var beer by remember { mutableStateOf<Beer?>(null) }
     var groupRating by remember { mutableStateOf(0.0) }
     val snackbarHostState = remember { SnackbarHostState() }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
-    
-    // For demonstration purposes, use sample data
+    val context = LocalContext.current
+
+    // Convert beerId from String to Int for API call
     LaunchedEffect(beerId) {
-        // In a real app, fetch beer details and group rating from Firebase
+        isLoading = true
+        errorMessage = null
+
         try {
-            // Simulate network delay
-            kotlinx.coroutines.delay(1500)
-            
-            // Sample data for demo purposes
-            beer = when (beerId) {
-                "1" -> Beer(
-                    id = "1",
-                    name = "Heineken",
-                    brewery = "Heineken International",
-                    style = "Pale Lager",
-                    abv = 5.0,
-                    rating = 3.2,
-                    imageUrl = "https://example.com/heineken.jpg"
-                )
-                "2" -> Beer(
-                    id = "2",
-                    name = "Guinness Draught",
-                    brewery = "Guinness",
-                    style = "Irish Dry Stout",
-                    abv = 4.2,
-                    rating = 4.1,
-                    imageUrl = "https://example.com/guinness.jpg"
-                )
-                "3" -> Beer(
-                    id = "3",
-                    name = "Corona Extra",
-                    brewery = "Grupo Modelo",
-                    style = "Pale Lager",
-                    abv = 4.5,
-                    rating = 3.0,
-                    imageUrl = "https://example.com/corona.jpg"
-                )
-                "4" -> Beer(
-                    id = "4",
-                    name = "Sierra Nevada Pale Ale",
-                    brewery = "Sierra Nevada Brewing Co.",
-                    style = "American Pale Ale",
-                    abv = 5.6,
-                    rating = 4.3,
-                    imageUrl = "https://example.com/sierra.jpg"
-                )
-                "5" -> Beer(
-                    id = "5",
-                    name = "Duvel",
-                    brewery = "Duvel Moortgat",
-                    style = "Belgian Strong Golden Ale",
-                    abv = 8.5,
-                    rating = 4.5,
-                    imageUrl = "https://example.com/duvel.jpg"
-                )
-                else -> null
+            // Parse beerId to Int
+            val beerIdInt = beerId.toIntOrNull()
+
+            if (beerIdInt == null) {
+                throw IllegalArgumentException("Invalid beer ID format")
             }
-            
-            if (beer == null) {
-                throw Exception("Beer not found")
-            }
-            
-            // Generate a random group rating for demo
-            // In a real app, this would be fetched from Firestore
-            groupRating = (Random.nextDouble() * 2 + 2).roundTo(1) // Random between 2 and 4
-            
+
+            // Fetch beer details from API
+            val result = PunkApiService.getBeerById(beerIdInt)
+
+            result.fold(
+                onSuccess = { fetchedBeer ->
+                    beer = fetchedBeer
+                },
+                onFailure = { exception ->
+                    errorMessage = "Failed to load beer: ${exception.message}"
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred")
+                    }
+                }
+            )
         } catch (e: Exception) {
+            errorMessage = "Error: ${e.message}"
             coroutineScope.launch {
-                snackbarHostState.showSnackbar("Error loading results: ${e.message}")
+                snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred")
             }
         } finally {
             isLoading = false
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -172,12 +140,20 @@ fun VoteEndedScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Beer image
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                    ) {
+                    if (beer?.image != null) {
+                        // Load image from URL using Coil
+                        Image(
+                            painter = rememberAsyncImagePainter(
+                                ImageRequest.Builder(context)
+                                    .data(beer?.getFormattedImageUrl())
+                                    .build()
+                            ),
+                            contentDescription = beer?.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    } else {
+                        // Fallback placeholder image
                         Image(
                             painter = painterResource(id = R.drawable.beer_placeholder),
                             contentDescription = beer?.name,
@@ -185,9 +161,9 @@ fun VoteEndedScreen(
                             contentScale = ContentScale.Fit
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // Beer name
                     Text(
                         text = beer?.name ?: "",
@@ -195,9 +171,9 @@ fun VoteEndedScreen(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     Spacer(modifier = Modifier.height(32.dp))
-                    
+
                     // Results comparison
                     Card(
                         modifier = Modifier.fillMaxWidth()
@@ -212,9 +188,9 @@ fun VoteEndedScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center
                             )
-                            
+
                             Spacer(modifier = Modifier.height(24.dp))
-                            
+
                             // Group rating
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -225,23 +201,24 @@ fun VoteEndedScreen(
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.weight(1f)
                                 )
-                                
+
                                 RatingDisplay(
                                     rating = groupRating,
                                     starSize = 24
                                 )
-                                
+
                                 Spacer(modifier = Modifier.width(8.dp))
-                                
+
                                 Text(
-                                    text = String.format("%.1f", groupRating),
+                                    //text = String.format("%.1f", groupRating),
+                                    text="",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            
+
                             Spacer(modifier = Modifier.height(16.dp))
-                            
+
                             // Untappd rating
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -252,42 +229,45 @@ fun VoteEndedScreen(
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.weight(1f)
                                 )
-                                
+
                                 RatingDisplay(
-                                    rating = beer?.rating ?: 0.0,
+                                    //rating = beer?.rating ?: 0.0,
+                                    rating = 0.0,
                                     starSize = 24
                                 )
-                                
+
                                 Spacer(modifier = Modifier.width(8.dp))
-                                
+
                                 Text(
-                                    text = String.format("%.1f", beer?.rating),
+                                    //text = String.format("%.1f", beer?.rating),
+                                    text="",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            
+
                             Spacer(modifier = Modifier.height(16.dp))
-                            
+
                             // Comparison text
-                            val difference = (groupRating - (beer?.rating ?: 0.0)).roundTo(1)
-                            val comparisonText = when {
-                                difference > 0.5 -> "Your group rated this beer higher than the average Untappd user!"
-                                difference < -0.5 -> "Your group rated this beer lower than the average Untappd user."
-                                else -> "Your group's rating is similar to the Untappd community."
-                            }
-                            
+                            //val difference = (groupRating - (beer?.rating ?: 0.0)).roundTo(1)
+                            //val comparisonText = when {
+                            //    difference > 0.5 -> "Your group rated this beer higher than the average Untappd user!"
+                            //    difference < -0.5 -> "Your group rated this beer lower than the average Untappd user."
+                            //    else -> "Your group's rating is similar to the Untappd community."
+                            //}
+
                             Text(
-                                text = comparisonText,
+                              //  text = comparisonText,
+                                text="",
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.weight(1f))
-                    
+
                     // Action buttons
                     Row(
                         modifier = Modifier
@@ -301,7 +281,7 @@ fun VoteEndedScreen(
                         ) {
                             Text("Leave Group")
                         }
-                        
+
                         Button(
                             onClick = onRateNextBeer,
                             modifier = Modifier.weight(1f)
@@ -372,4 +352,4 @@ fun Double.roundTo(decimals: Int): Double {
     var multiplier = 1.0
     repeat(decimals) { multiplier *= 10 }
     return (this * multiplier).roundToInt() / multiplier
-} 
+}

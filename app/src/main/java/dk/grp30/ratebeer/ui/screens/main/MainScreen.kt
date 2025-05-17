@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Logout
@@ -79,30 +80,19 @@ fun MainScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Rounded.LocalDrink,
-                            contentDescription = null,
-                            tint = colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "RateBeer",
-                            color = colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorScheme.primaryContainer,
+                    containerColor = colorScheme.background,
                     titleContentColor = colorScheme.onPrimaryContainer
                 ),
                 actions = {
                     IconButton(onClick = onLogout) {
                         Icon(
-                            imageVector = Icons.Default.Logout,
+                            imageVector = Icons.AutoMirrored.Default.Logout,
                             contentDescription = "Logout",
-                            tint = colorScheme.primary
+                            tint = colorScheme.onSurface,
                         )
                     }
                 }

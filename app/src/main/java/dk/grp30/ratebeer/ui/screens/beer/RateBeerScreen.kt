@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Card
@@ -41,97 +40,69 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.R
 import dk.grp30.ratebeer.data.api.Beer
-import dk.grp30.ratebeer.data.api.UntappdApiService
+import dk.grp30.ratebeer.data.api.PunkApiService
 import kotlinx.coroutines.launch
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RateBeerScreen(
-    groupId: String,
     beerId: String,
     onVoteSubmitted: (Int) -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
     var beer by remember { mutableStateOf<Beer?>(null) }
     var rating by remember { mutableIntStateOf(0) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    
-    // For demonstration purposes, use sample data
+    val context = LocalContext.current
+
+    // Convert beerId from String to Int for API call
     LaunchedEffect(beerId) {
-        // In a real app, fetch beer details from the API
+        isLoading = true
+        errorMessage = null
+
         try {
-            // Simulate network delay
-            kotlinx.coroutines.delay(1000)
-            
-            // Sample data for demo purposes
-            beer = when (beerId) {
-                "1" -> Beer(
-                    id = "1",
-                    name = "Heineken",
-                    brewery = "Heineken International",
-                    style = "Pale Lager",
-                    abv = 5.0,
-                    rating = 3.2,
-                    imageUrl = "https://example.com/heineken.jpg"
-                )
-                "2" -> Beer(
-                    id = "2",
-                    name = "Guinness Draught",
-                    brewery = "Guinness",
-                    style = "Irish Dry Stout",
-                    abv = 4.2,
-                    rating = 4.1,
-                    imageUrl = "https://example.com/guinness.jpg"
-                )
-                "3" -> Beer(
-                    id = "3",
-                    name = "Corona Extra",
-                    brewery = "Grupo Modelo",
-                    style = "Pale Lager",
-                    abv = 4.5,
-                    rating = 3.0,
-                    imageUrl = "https://example.com/corona.jpg"
-                )
-                "4" -> Beer(
-                    id = "4",
-                    name = "Sierra Nevada Pale Ale",
-                    brewery = "Sierra Nevada Brewing Co.",
-                    style = "American Pale Ale",
-                    abv = 5.6,
-                    rating = 4.3,
-                    imageUrl = "https://example.com/sierra.jpg"
-                )
-                "5" -> Beer(
-                    id = "5",
-                    name = "Duvel",
-                    brewery = "Duvel Moortgat",
-                    style = "Belgian Strong Golden Ale",
-                    abv = 8.5,
-                    rating = 4.5,
-                    imageUrl = "https://example.com/duvel.jpg"
-                )
-                else -> null
+            // Parse beerId to Int
+            val beerIdInt = beerId.toIntOrNull()
+
+            if (beerIdInt == null) {
+                throw IllegalArgumentException("Invalid beer ID format")
             }
-            
-            if (beer == null) {
-                throw Exception("Beer not found")
-            }
+
+            // Fetch beer details from API
+            val result = PunkApiService.getBeerById(beerIdInt)
+
+            result.fold(
+                onSuccess = { fetchedBeer ->
+                    beer = fetchedBeer
+                },
+                onFailure = { exception ->
+                    errorMessage = "Failed to load beer: ${exception.message}"
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred")
+                    }
+                }
+            )
         } catch (e: Exception) {
+            errorMessage = "Error: ${e.message}"
             coroutineScope.launch {
-                snackbarHostState.showSnackbar("Error loading beer: ${e.message}")
+                snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred")
             }
         } finally {
             isLoading = false
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -157,6 +128,19 @@ fun RateBeerScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Loading beer details...")
                 }
+            } else if (errorMessage != null) {
+                // Error state
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = errorMessage ?: "Unknown error",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                }
             } else if (beer != null) {
                 // Beer details
                 Column(
@@ -172,18 +156,31 @@ fun RateBeerScreen(
                             .fillMaxWidth()
                             .height(200.dp)
                     ) {
-                        // In a real app, load image from URL
-                        // For demo, use placeholder
-                        Image(
-                            painter = painterResource(id = R.drawable.beer_placeholder),
-                            contentDescription = beer?.name,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
-                        )
+                        if (beer?.image != null) {
+                            // Load image from URL using Coil
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    ImageRequest.Builder(context)
+                                        .data(beer?.getFormattedImageUrl())
+                                        .build()
+                                ),
+                                contentDescription = beer?.name,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit
+                            )
+                        } else {
+                            // Fallback placeholder image
+                            Image(
+                                painter = painterResource(id = R.drawable.beer_placeholder),
+                                contentDescription = beer?.name,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // Beer name
                     Text(
                         text = beer?.name ?: "",
@@ -191,55 +188,83 @@ fun RateBeerScreen(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
-                    // Brewery
+
+                    // Tagline
                     Text(
-                        text = beer?.brewery ?: "",
+                        text = beer?.tagline ?: "",
                         style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center
                     )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     // Beer details
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "Style: ${beer?.style}",
+                            text = "First Brewed: ${beer?.first_brewed}",
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        
+
                         Spacer(modifier = Modifier.width(16.dp))
-                        
+
                         Text(
                             text = "ABV: ${String.format("%.1f", beer?.abv)}%",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    // Untappd rating
+
+                    if (beer?.ibu != null || beer?.ebc != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            if (beer?.ibu != null) {
+                                Text(
+                                    text = "IBU: ${String.format("%.1f", beer?.ibu)}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+                            }
+
+                            if (beer?.ebc != null) {
+                                Text(
+                                    text = "EBC: ${String.format("%.1f", beer?.ebc)}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Description
                     Text(
-                        text = "Untappd Rating: ${String.format("%.1f", beer?.rating)}/5",
-                        style = MaterialTheme.typography.bodyMedium
+                        text = beer?.description ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.height(32.dp))
-                    
+
                     // Rating section
                     Text(
                         text = "Your Rating",
                         style = MaterialTheme.typography.titleMedium,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // Star rating
                     StarRating(
                         rating = rating,
@@ -250,9 +275,9 @@ fun RateBeerScreen(
                         },
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     // Rating text
                     Text(
                         text = when (rating) {
@@ -300,4 +325,4 @@ fun StarRating(
             }
         }
     }
-} 
+}

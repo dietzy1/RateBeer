@@ -120,7 +120,7 @@ fun RateBeerNavGraph(navController: NavHostController) {
                     navController.navigate(
                         RateBeerDestinations.RATE_BEER_ROUTE
                             .replace("{groupId}", groupId)
-                            .replace("{beerId}", beer.id)
+                            .replace("{beerId}", beer.id.toString())
                     )
                 }
             )
@@ -130,7 +130,6 @@ fun RateBeerNavGraph(navController: NavHostController) {
             val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
             val beerId = backStackEntry.arguments?.getString("beerId") ?: ""
             RateBeerScreen(
-                groupId = groupId,
                 beerId = beerId,
                 onVoteSubmitted = { rating ->
                     navController.navigate(

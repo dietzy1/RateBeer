@@ -3,7 +3,6 @@ package dk.grp30.ratebeer.ui.screens.beer
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -26,13 +25,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.LocalDrink
 import androidx.compose.material.icons.outlined.Percent
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -54,9 +54,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -64,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.data.api.Beer
+import dk.grp30.ratebeer.data.api.PunkApiService
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,61 +74,11 @@ fun FindBeerScreen(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
+    var isLoadingRandom by remember { mutableStateOf(false) }
     var searchResults by remember { mutableStateOf<List<Beer>>(emptyList()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
-    
-    // For demo, let's populate some sample beers if the API isn't available yet
-    val sampleBeers = remember {
-        listOf(
-            Beer(
-                id = "1",
-                name = "Heineken",
-                brewery = "Heineken International",
-                style = "Pale Lager",
-                abv = 5.0,
-                rating = 3.2,
-                imageUrl = "https://example.com/heineken.jpg"
-            ),
-            Beer(
-                id = "2",
-                name = "Guinness Draught",
-                brewery = "Guinness",
-                style = "Irish Dry Stout",
-                abv = 4.2,
-                rating = 4.1,
-                imageUrl = "https://example.com/guinness.jpg"
-            ),
-            Beer(
-                id = "3",
-                name = "Corona Extra",
-                brewery = "Grupo Modelo",
-                style = "Pale Lager",
-                abv = 4.5,
-                rating = 3.0,
-                imageUrl = "https://example.com/corona.jpg"
-            ),
-            Beer(
-                id = "4",
-                name = "Sierra Nevada Pale Ale",
-                brewery = "Sierra Nevada Brewing Co.",
-                style = "American Pale Ale",
-                abv = 5.6,
-                rating = 4.3,
-                imageUrl = "https://example.com/sierra.jpg"
-            ),
-            Beer(
-                id = "5",
-                name = "Duvel",
-                brewery = "Duvel Moortgat",
-                style = "Belgian Strong Golden Ale",
-                abv = 8.5,
-                rating = 4.5,
-                imageUrl = "https://example.com/duvel.jpg"
-            )
-        )
-    }
     
     Scaffold(
         topBar = {
@@ -144,9 +93,7 @@ fun FindBeerScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    containerColor = MaterialTheme.colorScheme.background,
                 )
             )
         },
@@ -167,7 +114,7 @@ fun FindBeerScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    label = { Text("Search beer by name, brewery or style") },
+                    label = { Text("Search beer by name") },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -200,23 +147,22 @@ fun FindBeerScreen(
                                 isSearching = true
                                 keyboardController?.hide()
                                 
-                                // Use Untappd API service to search for beers
+                                // Use Punk API service to search for beers by name
                                 coroutineScope.launch {
                                     try {
-                                        // In a real app, this would be a real API call
-                                        // For demonstration, we're using sample data
-                                        
-                                        // For demo, just filter sample beers
-                                        kotlinx.coroutines.delay(1000) // Simulate network delay
-                                        searchResults = sampleBeers.filter { 
-                                            it.name.contains(searchQuery, ignoreCase = true) ||
-                                            it.brewery.contains(searchQuery, ignoreCase = true) ||
-                                            it.style.contains(searchQuery, ignoreCase = true)
-                                        }
-                                        
-                                        if (searchResults.isEmpty()) {
-                                            snackbarHostState.showSnackbar("No beers found matching '$searchQuery'")
-                                        }
+                                        val result = PunkApiService.searchBeersByName(searchQuery)
+                                        result.fold(
+                                            onSuccess = { beers ->
+                                                searchResults = beers
+                                                
+                                                if (searchResults.isEmpty()) {
+                                                    snackbarHostState.showSnackbar("No beers found matching '$searchQuery'")
+                                                }
+                                            },
+                                            onFailure = { error ->
+                                                snackbarHostState.showSnackbar("Error searching: ${error.message}")
+                                            }
+                                        )
                                     } catch (e: Exception) {
                                         snackbarHostState.showSnackbar("Error searching: ${e.message}")
                                     } finally {
@@ -227,15 +173,15 @@ fun FindBeerScreen(
                         }
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Search results with improved visuals
-                if (!isSearching) {
+                if (!isSearching && !isLoadingRandom) {
                     if (searchResults.isEmpty() && searchQuery.isBlank()) {
                         // Initial state with better visual guidance
                         EmptyStateView(
-                            message = "Enter a beer name, brewery, or style to discover your next favorite brew",
+                            message = "Search for a beer by name or get a random beer recommendation",
                             icon = Icons.Outlined.LocalDrink
                         )
                     } else if (searchResults.isEmpty() && searchQuery.isNotBlank()) {
@@ -268,8 +214,8 @@ fun FindBeerScreen(
                             }
                         }
                     }
-                } else {
-                    // Show loading indicator with better visual
+                } else if (isSearching) {
+                    // Show loading indicator for search
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -288,6 +234,26 @@ fun FindBeerScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                } else if (isLoadingRandom) {
+                    // Show loading indicator for random beer
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(48.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Finding a random beer for you...",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -295,7 +261,7 @@ fun FindBeerScreen(
 }
 
 @Composable
-fun EmptyStateView(message: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+fun EmptyStateView(message: String, icon: ImageVector) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -359,7 +325,7 @@ fun BeerListItem(
                     )
                     
                     Text(
-                        text = beer.brewery,
+                        text = beer.tagline,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.secondary,
                         maxLines = 1,
@@ -368,13 +334,13 @@ fun BeerListItem(
                     )
                 }
                 
-                // Rating display with better visual
-                RatingBadge(rating = beer.rating)
+                // ABV Badge instead of rating
+                AbvBadge(abv = beer.abv)
             }
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Style info row with icons
+            // Info row with ABV and first brewed date
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -385,7 +351,7 @@ fun BeerListItem(
                     )
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                // Beer style
+                // First brewed date
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
@@ -398,7 +364,7 @@ fun BeerListItem(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = beer.style,
+                        text = "First brewed: ${beer.first_brewed}",
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -406,22 +372,17 @@ fun BeerListItem(
                     )
                 }
                 
-                // ABV percentage
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Percent,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "ABV: ${String.format("%.1f", beer.abv)}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                // IBU if available
+                beer.ibu?.let { ibu ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "IBU: ${String.format("%.1f", ibu)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -429,19 +390,19 @@ fun BeerListItem(
 }
 
 @Composable
-fun RatingBadge(rating: Double) {
+fun AbvBadge(abv: Double) {
     val backgroundColor = when {
-        rating >= 4.5 -> MaterialTheme.colorScheme.primary
-        rating >= 4.0 -> MaterialTheme.colorScheme.primaryContainer
-        rating >= 3.0 -> MaterialTheme.colorScheme.secondaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
+        abv >= 10.0 -> MaterialTheme.colorScheme.error
+        abv >= 7.5 -> MaterialTheme.colorScheme.errorContainer
+        abv >= 5.0 -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.secondaryContainer
     }
     
     val contentColor = when {
-        rating >= 4.5 -> MaterialTheme.colorScheme.onPrimary
-        rating >= 4.0 -> MaterialTheme.colorScheme.onPrimaryContainer
-        rating >= 3.0 -> MaterialTheme.colorScheme.onSecondaryContainer
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
+        abv >= 10.0 -> MaterialTheme.colorScheme.onError
+        abv >= 7.5 -> MaterialTheme.colorScheme.onErrorContainer
+        abv >= 5.0 -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSecondaryContainer
     }
 
     Surface(
@@ -454,13 +415,13 @@ fun RatingBadge(rating: Double) {
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Star,
+                imageVector = Icons.Outlined.Percent,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = String.format("%.1f", rating),
+                text = String.format("%.1f", abv),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold
             )
