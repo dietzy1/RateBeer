@@ -72,7 +72,7 @@ fun WelcomeScreen(
                     )
                 ) {
                     Image(
-                        painter = painterResource(id = R.drawable.beer_placeholder),
+                        painter = painterResource(id = R.drawable.image),
                         contentDescription = "Beer Logo",
                         modifier = Modifier
                             .fillMaxWidth()
