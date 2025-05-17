@@ -123,7 +123,7 @@ fun RegisterScreen(
             TopAppBar(
                 title = { Text("Create Account") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorScheme.primaryContainer,
+                    containerColor = colorScheme.background,
                     titleContentColor = colorScheme.onPrimaryContainer
                 ),
                 navigationIcon = {

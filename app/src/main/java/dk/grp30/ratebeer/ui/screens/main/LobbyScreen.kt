@@ -80,11 +80,6 @@ fun LobbyScreen(
             TopAppBar(
                 title = { 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Groups,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Beer Tasting Lobby") 
                     }

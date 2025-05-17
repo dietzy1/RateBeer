@@ -99,7 +99,7 @@ fun LoginScreen(
             TopAppBar(
                 title = { Text("Login to RateBeer") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorScheme.primaryContainer,
+                    containerColor = colorScheme.background,
                     titleContentColor = colorScheme.onPrimaryContainer
                 ),
                 navigationIcon = {
