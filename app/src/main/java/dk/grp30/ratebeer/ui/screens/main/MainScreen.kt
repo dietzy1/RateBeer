@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.LocalDrink
@@ -43,6 +42,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,20 +60,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import dk.grp30.ratebeer.data.firestore.GroupRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    onCreateGroup: (String) -> Unit,
-    onJoinGroup: (String) -> Unit,
-    onLogout: () -> Unit
+    onNavigateToLobby: (groupId: String, groupCode: String) -> Unit,
+    onLogout: () -> Unit,
+    groupRepository: GroupRepository
 ) {
+    val viewModel = remember { MainViewModel(groupRepository) }
     var groupCode by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    
     val colorScheme = MaterialTheme.colorScheme
-    
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Handle navigation
+    LaunchedEffect(uiState.groupId, uiState.groupCode) {
+        if (uiState.groupId != null && uiState.groupCode != null) {
+            onNavigateToLobby(uiState.groupId!!, uiState.groupCode!!)
+        }
+    }
+
+    // Show error snackbar if needed
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { errorMsg ->
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(errorMsg)
+                viewModel.clearError()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -216,9 +236,8 @@ fun MainScreen(
                         
                         Button(
                             onClick = {
-                                // Generate a random 6-digit code
                                 val randomCode = String.format("%06d", Random.nextInt(1000000))
-                                onCreateGroup(randomCode)
+                                viewModel.createGroup(randomCode)
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -346,7 +365,7 @@ fun MainScreen(
                         Button(
                             onClick = {
                                 if (groupCode.length == 6) {
-                                    onJoinGroup(groupCode)
+                                    viewModel.joinGroup(groupCode)
                                 } else {
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Please enter a valid 6-digit code")

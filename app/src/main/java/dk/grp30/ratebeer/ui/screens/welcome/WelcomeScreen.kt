@@ -58,28 +58,7 @@ fun WelcomeScreen(
             ) {
                 Spacer(modifier = Modifier.weight(0.5f))
 
-                // App logo in a card for better contrast
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-                    ),
-                    elevation = CardDefaults.cardElevation(
-                        defaultElevation = 6.dp
-                    )
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.image),
-                        contentDescription = "Beer Logo",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentScale = ContentScale.Fit
-                    )
-                }
+              
 
                 Spacer(modifier = Modifier.weight(0.2f))
 

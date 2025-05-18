@@ -50,7 +50,10 @@ import coil3.request.ImageRequest
 import dk.grp30.ratebeer.R
 import dk.grp30.ratebeer.data.api.Beer
 import dk.grp30.ratebeer.data.api.PunkApiService
+import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.runtime.collectAsState
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,49 +61,49 @@ import kotlin.math.roundToInt
 fun VoteEndedScreen(
     groupId: String,
     beerId: String,
+    beerRatingRepository: BeerRatingRepository,
     onRateNextBeer: () -> Unit,
     onLeaveGroup: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
     var beer by remember { mutableStateOf<Beer?>(null) }
-    var groupRating by remember { mutableStateOf(0.0) }
-    val snackbarHostState = remember { SnackbarHostState() }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // Convert beerId from String to Int for API call
+    // Group rating state
+    val groupRatingFlow = remember { beerRatingRepository.observeGroupRating(groupId, beerId) }
+    val groupRatingState by groupRatingFlow.collectAsState(initial = null)
+    val groupAverage = groupRatingState?.averageRating ?: 0.0
+
+    // Global average state
+    var globalAverage by remember { mutableStateOf<Double?>(null) }
+
+    // Fetch global average
     LaunchedEffect(beerId) {
         isLoading = true
         errorMessage = null
-
         try {
             // Parse beerId to Int
             val beerIdInt = beerId.toIntOrNull()
-
             if (beerIdInt == null) {
                 throw IllegalArgumentException("Invalid beer ID format")
             }
-
             // Fetch beer details from API
             val result = PunkApiService.getBeerById(beerIdInt)
-
             result.fold(
-                onSuccess = { fetchedBeer ->
-                    beer = fetchedBeer
-                },
+                onSuccess = { fetchedBeer -> beer = fetchedBeer },
                 onFailure = { exception ->
                     errorMessage = "Failed to load beer: ${exception.message}"
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred")
-                    }
+                    coroutineScope.launch { snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred") }
                 }
             )
+            // Fetch global average using repository
+            globalAverage = beerRatingRepository.getGlobalAverageForBeer(beerId)
         } catch (e: Exception) {
             errorMessage = "Error: ${e.message}"
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred")
-            }
+            coroutineScope.launch { snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred") }
         } finally {
             isLoading = false
         }
@@ -203,15 +206,14 @@ fun VoteEndedScreen(
                                 )
 
                                 RatingDisplay(
-                                    rating = groupRating,
+                                    rating = groupAverage,
                                     starSize = 24
                                 )
 
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 Text(
-                                    //text = String.format("%.1f", groupRating),
-                                    text="",
+                                    text = if (groupRatingState != null) String.format("%.2f", groupAverage) else "-",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -219,28 +221,26 @@ fun VoteEndedScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Untappd rating
+                            // Global average
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Untappd Rating:",
+                                    text = "Global Average:",
                                     style = MaterialTheme.typography.bodyLarge,
                                     modifier = Modifier.weight(1f)
                                 )
 
                                 RatingDisplay(
-                                    //rating = beer?.rating ?: 0.0,
-                                    rating = 0.0,
+                                    rating = globalAverage ?: 0.0,
                                     starSize = 24
                                 )
 
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 Text(
-                                    //text = String.format("%.1f", beer?.rating),
-                                    text="",
+                                    text = globalAverage?.let { String.format("%.2f", it) } ?: "-",
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -249,16 +249,17 @@ fun VoteEndedScreen(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             // Comparison text
-                            //val difference = (groupRating - (beer?.rating ?: 0.0)).roundTo(1)
-                            //val comparisonText = when {
-                            //    difference > 0.5 -> "Your group rated this beer higher than the average Untappd user!"
-                            //    difference < -0.5 -> "Your group rated this beer lower than the average Untappd user."
-                            //    else -> "Your group's rating is similar to the Untappd community."
-                            //}
+                            val comparisonText = if (globalAverage != null && groupRatingState != null) {
+                                val diff = groupAverage - globalAverage!!
+                                when {
+                                    diff > 0.5 -> "Your group rated this beer higher than the global average!"
+                                    diff < -0.5 -> "Your group rated this beer lower than the global average."
+                                    else -> "Your group's rating is similar to the global average."
+                                }
+                            } else ""
 
                             Text(
-                              //  text = comparisonText,
-                                text="",
+                                text = comparisonText,
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()

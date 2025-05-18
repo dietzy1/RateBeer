@@ -16,13 +16,16 @@ import dk.grp30.ratebeer.ui.screens.main.LobbyScreen
 import dk.grp30.ratebeer.ui.screens.main.MainScreen
 import dk.grp30.ratebeer.ui.screens.register.RegisterScreen
 import dk.grp30.ratebeer.ui.screens.welcome.WelcomeScreen
+import dk.grp30.ratebeer.data.firestore.GroupRepository
+import androidx.compose.runtime.remember
+import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 
 object RateBeerDestinations {
     const val WELCOME_ROUTE = "welcome"
     const val LOGIN_ROUTE = "login"
     const val REGISTER_ROUTE = "register"
     const val MAIN_ROUTE = "main"
-    const val LOBBY_ROUTE = "lobby/{groupId}"
+    const val LOBBY_ROUTE = "lobby/{groupId}/{groupCode}"
     const val FIND_BEER_ROUTE = "find_beer/{groupId}"
     const val RATE_BEER_ROUTE = "rate_beer/{groupId}/{beerId}"
     const val VOTE_ENDED_ROUTE = "vote_ended/{groupId}/{beerId}"
@@ -31,6 +34,8 @@ object RateBeerDestinations {
 @Composable
 fun RateBeerNavGraph(navController: NavHostController) {
     val authRepository = AuthModule.provideAuthRepository()
+    val groupRepository = remember { dk.grp30.ratebeer.data.firestore.GroupRepository() }
+    val beerRatingRepository = remember { BeerRatingRepository() }
     
     // Check if user is already logged in, if so navigate directly to main screen
     LaunchedEffect(key1 = true) {
@@ -85,29 +90,33 @@ fun RateBeerNavGraph(navController: NavHostController) {
             }
             
             MainScreen(
-                onCreateGroup = { groupId -> 
-                    navController.navigate(RateBeerDestinations.LOBBY_ROUTE.replace("{groupId}", groupId)) 
-                },
-                onJoinGroup = { groupId -> 
-                    navController.navigate(RateBeerDestinations.LOBBY_ROUTE.replace("{groupId}", groupId)) 
+                onNavigateToLobby = { groupId, groupCode ->
+                    navController.navigate(RateBeerDestinations.LOBBY_ROUTE
+                        .replace("{groupId}", groupId)
+                        .replace("{groupCode}", groupCode)
+                    )
                 },
                 onLogout = {
                     authRepository.logout()
                     navController.navigate(RateBeerDestinations.WELCOME_ROUTE) {
                         popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
                     }
-                }
+                },
+                groupRepository = groupRepository
             )
         }
         
         composable(RateBeerDestinations.LOBBY_ROUTE) { backStackEntry ->
             val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
+            val groupCode = backStackEntry.arguments?.getString("groupCode") ?: ""
             LobbyScreen(
                 groupId = groupId,
+                groupCode = groupCode,
                 onNavigateBack = { navController.popBackStack() },
                 onFindBeerClick = {
                     navController.navigate(RateBeerDestinations.FIND_BEER_ROUTE.replace("{groupId}", groupId))
-                }
+                },
+                groupRepository = groupRepository
             )
         }
         
@@ -130,7 +139,9 @@ fun RateBeerNavGraph(navController: NavHostController) {
             val groupId = backStackEntry.arguments?.getString("groupId") ?: ""
             val beerId = backStackEntry.arguments?.getString("beerId") ?: ""
             RateBeerScreen(
+                groupId = groupId,
                 beerId = beerId,
+                beerRatingRepository = beerRatingRepository,
                 onVoteSubmitted = { rating ->
                     navController.navigate(
                         RateBeerDestinations.VOTE_ENDED_ROUTE
@@ -149,6 +160,7 @@ fun RateBeerNavGraph(navController: NavHostController) {
             VoteEndedScreen(
                 groupId = groupId,
                 beerId = beerId,
+                beerRatingRepository = beerRatingRepository,
                 onRateNextBeer = {
                     navController.navigate(
                         RateBeerDestinations.FIND_BEER_ROUTE.replace("{groupId}", groupId)

@@ -31,6 +31,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import dk.grp30.ratebeer.data.firestore.GroupRepository
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 
 // Temporary mock data
 data class Participant(val id: String, val name: String, val isHost: Boolean = false)
@@ -39,34 +44,18 @@ data class Participant(val id: String, val name: String, val isHost: Boolean = f
 @Composable
 fun LobbyScreen(
     groupId: String,
+    groupCode: String,
     onNavigateBack: () -> Unit,
-    onFindBeerClick: () -> Unit
+    onFindBeerClick: () -> Unit,
+    groupRepository: GroupRepository
 ) {
-    // In a real app, this would be populated from Firebase
-    val participants = remember {
-        mutableStateListOf(
-            Participant("1", "You", true),
-            Participant("2", "John", false),
-            Participant("3", "Emma", false)
-        )
-    }
-    
+    val groupFlow = remember { groupRepository.observeGroup(groupId) }
+    val group by groupFlow.collectAsState(initial = null)
+    val participants = group?.members ?: emptyList()
     var isLoading by remember { mutableStateOf(false) }
     var showCopiedMessage by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
-    
-    // Simulate a new participant joining every few seconds for demo purposes
-    LaunchedEffect(Unit) {
-        val names = listOf("Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace")
-        var count = participants.size
-        
-        while (count < names.size + participants.size - 2) {  // -2 because we start with 3 already
-            delay(3000)
-            participants.add(Participant((count + 1).toString(), names[count - participants.size + 2], false))
-            count++
-        }
-    }
-    
+
     // Handle "Copied" message disappearing
     LaunchedEffect(showCopiedMessage) {
         if (showCopiedMessage) {
@@ -74,7 +63,7 @@ fun LobbyScreen(
             showCopiedMessage = false
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -122,9 +111,7 @@ fun LobbyScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
-                    
                     Spacer(modifier = Modifier.height(8.dp))
-                    
                     // PIN display with copy button
                     Box(contentAlignment = Alignment.Center) {
                         Row(
@@ -140,17 +127,15 @@ fun LobbyScreen(
                                 )
                         ) {
                             Text(
-                                text = groupId,
+                                text = groupCode,
                                 style = MaterialTheme.typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            
                             Spacer(modifier = Modifier.width(12.dp))
-                            
                             IconButton(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(groupId))
+                                    clipboardManager.setText(AnnotatedString(groupCode))
                                     showCopiedMessage = true
                                 }
                             ) {
@@ -162,18 +147,14 @@ fun LobbyScreen(
                             }
                         }
                     }
-                    
                     Spacer(modifier = Modifier.height(12.dp))
-                    
                     Text(
                         text = "Share this PIN with friends to join your tasting session",
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
-                    
                     Spacer(modifier = Modifier.height(12.dp))
-                    
                     Button(
                         onClick = { /* Share functionality would go here */ },
                         shape = RoundedCornerShape(12.dp),
@@ -190,9 +171,7 @@ fun LobbyScreen(
                     }
                 }
             }
-            
             Spacer(modifier = Modifier.height(24.dp))
-            
             // Participants section
             Row(
                 modifier = Modifier
@@ -205,9 +184,7 @@ fun LobbyScreen(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                
                 Spacer(modifier = Modifier.width(8.dp))
-                
                 Surface(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
@@ -221,33 +198,26 @@ fun LobbyScreen(
                         )
                     }
                 }
-                
                 Spacer(modifier = Modifier.weight(1f))
-                
-                // This could be a filter or sort button in the future
                 Text(
                     text = "Waiting for others...",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline
                 )
             }
-            
             // Participants list
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
             ) {
-                // Add animation by loading participants with a delay between each
                 itemsIndexed(participants) { index, participant ->
                     key(participant.id) {
                         var visible by remember { mutableStateOf(false) }
-                        
                         LaunchedEffect(Unit) {
                             delay(index * 100L)
                             visible = true
                         }
-                        
                         AnimatedVisibility(
                             visible = visible,
                             enter = fadeIn() + slideInVertically(
@@ -275,7 +245,6 @@ fun LobbyScreen(
                                         .padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Avatar placeholder
                                     Box(
                                         modifier = Modifier
                                             .size(40.dp)
@@ -292,16 +261,13 @@ fun LobbyScreen(
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }
-                                    
                                     Spacer(modifier = Modifier.width(16.dp))
-                                    
                                     Column {
                                         Text(
                                             text = participant.name,
                                             style = MaterialTheme.typography.bodyLarge,
                                             fontWeight = if (participant.isHost) FontWeight.Bold else FontWeight.Normal
                                         )
-                                        
                                         if (participant.isHost) {
                                             Text(
                                                 text = "Host",
@@ -316,12 +282,10 @@ fun LobbyScreen(
                     }
                 }
             }
-            
             // Find beer button
             Button(
                 onClick = {
                     isLoading = true
-                    // In a real app, we'd want to do any cleanup or preparation before navigating
                     onFindBeerClick()
                 },
                 modifier = Modifier
@@ -352,8 +316,6 @@ fun LobbyScreen(
                     )
                 }
             }
-            
-            // Status message
             AnimatedVisibility(visible = participants.size >= 3) {
                 Text(
                     text = "Ready to start when you are!",

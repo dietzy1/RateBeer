@@ -176,4 +176,18 @@ class BeerRatingRepository @Inject constructor() {
         
         awaitClose { subscription.remove() }
     }
+    
+    suspend fun getGlobalAverageForBeer(beerId: String): Double? {
+        return try {
+            val ratingsSnapshot = ratingsCollection
+                .whereEqualTo("beerId", beerId)
+                .get()
+                .await()
+            val allRatings = ratingsSnapshot.documents.mapNotNull { it.toObject(GroupBeerRating::class.java) }
+            val allUserRatings = allRatings.flatMap { it.userRatings }
+            if (allUserRatings.isNotEmpty()) allUserRatings.map { it.rating }.average() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
 } 

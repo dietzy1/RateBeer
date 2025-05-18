@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.R
 import dk.grp30.ratebeer.data.api.Beer
 import dk.grp30.ratebeer.data.api.PunkApiService
+import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 import kotlinx.coroutines.launch
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
@@ -55,7 +56,9 @@ import coil3.request.ImageRequest
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RateBeerScreen(
+    groupId: String,
     beerId: String,
+    beerRatingRepository: BeerRatingRepository,
     onVoteSubmitted: (Int) -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -65,6 +68,7 @@ fun RateBeerScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    var isSubmitting by remember { mutableStateOf(false) }
 
     // Convert beerId from String to Int for API call
     LaunchedEffect(beerId) {
@@ -270,11 +274,24 @@ fun RateBeerScreen(
                         rating = rating,
                         onRatingChanged = { newRating ->
                             rating = newRating
-                            // Submit the rating when a star is clicked
-                            onVoteSubmitted(newRating)
+                            isSubmitting = true
+                            coroutineScope.launch {
+                                val result = beerRatingRepository.submitRating(groupId, beerId, newRating)
+                                isSubmitting = false
+                                if (result is dk.grp30.ratebeer.data.firestore.RatingResult.Success) {
+                                    onVoteSubmitted(newRating)
+                                } else if (result is dk.grp30.ratebeer.data.firestore.RatingResult.Error) {
+                                    snackbarHostState.showSnackbar(result.message)
+                                }
+                            }
                         },
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
+
+                    if (isSubmitting) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
