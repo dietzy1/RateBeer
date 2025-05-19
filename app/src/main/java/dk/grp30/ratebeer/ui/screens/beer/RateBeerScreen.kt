@@ -76,14 +76,26 @@ fun RateBeerScreen(
     val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
-    // If everyone has rated, then we redirect
-    LaunchedEffect(group?.members?.size == group?.votedUserIds?.size) {
-        val memberCount = group?.members?.size
-        val ratingsCount = group?.votedUserIds?.size
+    // If everyone currently in the group has rated, then we redirect
+    LaunchedEffect(group) {
+        group?.let { currentGroup ->
+            val currentMemberIds = currentGroup.members.map { it.id }.toSet()
 
-        if (memberCount != null && ratingsCount != null && memberCount == ratingsCount) {
-            groupRepository.gotoVoteEnded(groupId, beerId)
-            onNavToVoteEnded()
+            if (currentMemberIds.isEmpty() && currentGroup.members.isNotEmpty()) {
+            }
+            if (currentGroup.members.isEmpty()) {
+                return@LaunchedEffect
+            }
+
+
+            val votesFromCurrentMembers = currentGroup.votedUserIds.filter { votedUserId ->
+                votedUserId in currentMemberIds
+            }
+
+            if (currentMemberIds.isNotEmpty() && votesFromCurrentMembers.size == currentMemberIds.size) {
+                groupRepository.gotoVoteEnded(groupId, beerId)
+                onNavToVoteEnded()
+            }
         }
     }
 
