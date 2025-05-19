@@ -70,6 +70,11 @@ class GroupRepository @Inject constructor() {
     }
 
     suspend fun gotoRate(groupId: String, beerId: String): GroupResult {
+        val res = resetUsersVoted(groupId)
+        if (res is GroupResult.Error) {
+            return res
+        }
+
         return setRoute(groupId, RateBeerDestinations.RATE_BEER_ROUTE
                             .replace("{groupId}", groupId)
                             .replace("{beerId}", beerId))
@@ -81,6 +86,27 @@ class GroupRepository @Inject constructor() {
                 .replace("{groupId}", groupId)
                 .replace("{beerId}", beerId))
     }
+
+    private suspend fun resetUsersVoted(groupId: String): GroupResult {
+    return try {
+        val groupDocRef = groupsCollection.document(groupId)
+        val groupSnapshot = groupDocRef.get().await()
+
+        if (!groupSnapshot.exists()) {
+            return GroupResult.Error("Group not found")
+        }
+
+        groupDocRef.update("votedUserIds", emptyList<String>()).await()
+
+        val updatedGroupDoc = groupDocRef.get().await()
+        val updatedGroup = updatedGroupDoc.toObject<Group>()
+            ?: return GroupResult.Error("Failed to get updated group after reset")
+
+        GroupResult.Success(updatedGroup)
+    } catch (e: Exception) {
+        GroupResult.Error("Failed to reset votes: ${e.message}")
+    }
+}
 
 
     private suspend fun setRoute(groupId: String, route: String): GroupResult {
