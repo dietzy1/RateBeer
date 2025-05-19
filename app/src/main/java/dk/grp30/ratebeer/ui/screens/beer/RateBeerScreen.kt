@@ -62,7 +62,7 @@ fun RateBeerScreen(
     beerId: String,
     groupRepository: GroupRepository,
     beerRatingRepository: BeerRatingRepository,
-    onVoteSubmitted: (Int) -> Unit,
+    onNavToVoteEnded: () -> Unit,
 ) {
     val groupFlow = remember { groupRepository.observeGroup(groupId) }
     val group by groupFlow.collectAsState(initial = null)
@@ -76,16 +76,14 @@ fun RateBeerScreen(
     val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
-    val groupRatingFlow = remember { beerRatingRepository.observeGroupRating(groupId, beerId) }
-    val groupRatingState by groupRatingFlow.collectAsState(initial = null)
-
     // If everyone has rated, then we redirect
-    LaunchedEffect(group?.members?.size == groupRatingState?.userRatings?.size) {
+    LaunchedEffect(group?.members?.size == group?.votedUserIds?.size) {
         val memberCount = group?.members?.size
-        val ratingsCount = groupRatingState?.userRatings?.size
+        val ratingsCount = group?.votedUserIds?.size
 
         if (memberCount != null && ratingsCount != null && memberCount == ratingsCount) {
             groupRepository.gotoVoteEnded(groupId, beerId)
+            onNavToVoteEnded()
         }
     }
 
@@ -281,6 +279,11 @@ fun RateBeerScreen(
                                 val result = beerRatingRepository.submitRating(groupId, beerId, newRating)
                                 isSubmitting = false
                                 if (result is dk.grp30.ratebeer.data.firestore.RatingResult.Success) {
+                                    val result2 = groupRepository.iVoted(groupId)
+                                    if (result2 is dk.grp30.ratebeer.data.firestore.GroupResult.Success) {
+                                    } else if (result2 is dk.grp30.ratebeer.data.firestore.GroupResult.Error) {
+                                        snackbarHostState.showSnackbar(result2.message)
+                                    }
                                 } else if (result is dk.grp30.ratebeer.data.firestore.RatingResult.Error) {
                                     snackbarHostState.showSnackbar(result.message)
                                 }

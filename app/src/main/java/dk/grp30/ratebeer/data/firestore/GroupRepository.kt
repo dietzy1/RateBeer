@@ -24,6 +24,7 @@ data class Group(
     val hostId: String = "",
     val members: List<GroupMember> = emptyList(),
     val createdAt: Long = 0,
+    val votedUserIds: List<String> = emptyList(),
     val isActive: Boolean = true,
     val displayedRoute: String = "",
 )
@@ -115,6 +116,35 @@ class GroupRepository @Inject constructor() {
             return GroupResult.Success(updatedGroup)
         } catch (e: Exception) {
             return GroupResult.Error("Failed to update group: ${e.message}")
+        }
+    }
+
+    suspend fun iVoted(groupId: String): GroupResult {
+        val currentUser = auth.currentUser ?: return GroupResult.Error("User not logged in")
+
+        try {
+            val groupDocRef = groupsCollection.document(groupId)
+            val groupSnapshot = groupDocRef.get().await()
+
+            if (!groupSnapshot.exists()) {
+                return GroupResult.Error("Group not found")
+            }
+
+            val votedUserIds = groupSnapshot.get("votedUserIds") as? List<String> ?: emptyList()
+
+            if (currentUser.uid in votedUserIds) {
+                return GroupResult.Success(group = groupSnapshot.toObject<Group>()!!)
+            }
+
+            groupDocRef.update("votedUserIds", FieldValue.arrayUnion(currentUser.uid)).await()
+
+            val updatedGroupDoc = groupDocRef.get().await()
+            val updatedGroup = updatedGroupDoc.toObject<Group>()
+                ?: return GroupResult.Error("Failed to get updated group")
+
+            return GroupResult.Success(updatedGroup)
+        } catch (e: Exception) {
+            return GroupResult.Error("Failed to vote: ${e.message}")
         }
     }
 

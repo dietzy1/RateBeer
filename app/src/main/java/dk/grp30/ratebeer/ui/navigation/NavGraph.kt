@@ -144,7 +144,7 @@ fun RateBeerNavGraph(navController: NavHostController) {
                 groupId = groupId,
                 beerId = beerId,
                 beerRatingRepository = beerRatingRepository,
-                onVoteSubmitted = { rating ->
+                onNavToVoteEnded = {
                     navController.navigate(
                         RateBeerDestinations.VOTE_ENDED_ROUTE
                             .replace("{groupId}", groupId)
