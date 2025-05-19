@@ -54,6 +54,7 @@ import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import dk.grp30.ratebeer.data.firestore.GroupRepository
+import dk.grp30.ratebeer.data.firestore.GroupResult
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -275,7 +276,16 @@ fun VoteEndedScreen(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         OutlinedButton(
-                            onClick = onLeaveGroup,
+                            onClick = {
+                                coroutineScope.launch {
+                                    val result = groupRepository.leaveGroup(groupId)
+                                    if (result is GroupResult.Success) {
+                                        onLeaveGroup()
+                                    } else if (result is GroupResult.Error) {
+                                        snackbarHostState.showSnackbar(result.message)
+                                    }
+                                }
+                            },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Leave Group")

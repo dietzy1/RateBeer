@@ -145,6 +145,37 @@ class GroupRepository @Inject constructor() {
         }
     }
 
+    suspend fun leaveGroup(groupId: String): GroupResult {
+        val currentUser = auth.currentUser ?: return GroupResult.Error("User not logged in")
+
+        try {
+            val groupDocRef = groupsCollection.document(groupId)
+            val groupSnapshot = groupDocRef.get().await()
+
+            if (!groupSnapshot.exists()) {
+                return GroupResult.Error("Group not found")
+            }
+
+            val group = groupSnapshot.toObject<Group>() ?: return GroupResult.Error("Invalid group data")
+            val updatedMembers = group.members.filterNot { it.id == currentUser.uid }
+
+            // If no changes were made, user wasn't in the group
+            if (updatedMembers.size == group.members.size) {
+                return GroupResult.Error("User is not a member of the group")
+            }
+
+            groupDocRef.update("members", updatedMembers).await()
+
+            val updatedGroupDoc = groupDocRef.get().await()
+            val updatedGroup = updatedGroupDoc.toObject<Group>()
+                ?: return GroupResult.Error("Failed to get updated group after leaving")
+
+            return GroupResult.Success(updatedGroup)
+        } catch (e: Exception) {
+            return GroupResult.Error("Failed to leave group: ${e.message}")
+        }
+    }
+
     suspend fun iVoted(groupId: String): GroupResult {
         val currentUser = auth.currentUser ?: return GroupResult.Error("User not logged in")
 
