@@ -71,7 +71,8 @@ import kotlinx.coroutines.launch
 fun FindBeerScreen(
     groupId: String,
     onNavigateBack: () -> Unit,
-    groupRepository: dk.grp30.ratebeer.data.firestore.GroupRepository
+    groupRepository: dk.grp30.ratebeer.data.firestore.GroupRepository,
+    onNavigateToRateBeer: (String, String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
@@ -209,11 +210,13 @@ fun FindBeerScreen(
                                         if (!isSubmitting) {
                                             isSubmitting = true
                                             coroutineScope.launch {
-                                                val result = groupRepository.selectBeerForGroup(groupId, beer.id)
+                                                val result = groupRepository.selectBeerForGroup(groupId, beer.id.toString())
                                                 isSubmitting = false
                                                 result.let {
                                                     if (it is dk.grp30.ratebeer.data.firestore.GroupResult.Error) {
                                                         snackbarHostState.showSnackbar(it.message)
+                                                    } else if (it is dk.grp30.ratebeer.data.firestore.GroupResult.Success) {
+                                                        onNavigateToRateBeer(groupId, beer.id.toString())
                                                     }
                                                 }
                                             }

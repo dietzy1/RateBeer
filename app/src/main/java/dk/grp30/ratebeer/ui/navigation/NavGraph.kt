@@ -114,7 +114,14 @@ fun RateBeerNavGraph(navController: NavHostController) {
                 onFindBeerClick = {
                     navController.navigate(RateBeerDestinations.FIND_BEER_ROUTE.replace("{groupId}", groupId))
                 },
-                groupRepository = groupRepository
+                groupRepository = groupRepository,
+                onNavigateToRateBeer = { gId, bId ->
+                    navController.navigate(
+                        RateBeerDestinations.RATE_BEER_ROUTE
+                            .replace("{groupId}", gId)
+                            .replace("{beerId}", bId)
+                    )
+                }
             )
         }
         
@@ -123,11 +130,12 @@ fun RateBeerNavGraph(navController: NavHostController) {
             FindBeerScreen(
                 groupId = groupId,
                 onNavigateBack = { navController.popBackStack() },
-                onBeerSelected = { beer ->
+                groupRepository = groupRepository,
+                onNavigateToRateBeer = { gId, bId ->
                     navController.navigate(
                         RateBeerDestinations.RATE_BEER_ROUTE
-                            .replace("{groupId}", groupId)
-                            .replace("{beerId}", beer.id.toString())
+                            .replace("{groupId}", gId)
+                            .replace("{beerId}", bId)
                     )
                 }
             )
