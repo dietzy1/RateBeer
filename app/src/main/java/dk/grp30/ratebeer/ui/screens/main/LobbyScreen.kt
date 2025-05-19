@@ -14,31 +14,25 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import dk.grp30.ratebeer.data.firestore.GroupRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.navigation.NavController
 
-// Temporary mock data
 data class Participant(val id: String, val name: String, val isHost: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,7 +52,6 @@ fun LobbyScreen(
     var showCopiedMessage by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
 
-    // Redirect to RateBeerScreen if selectedBeerId is set
     LaunchedEffect(group?.selectedBeerId) {
         val selectedBeerId = group?.selectedBeerId
         if (!selectedBeerId.isNullOrEmpty()) {
@@ -66,7 +59,6 @@ fun LobbyScreen(
         }
     }
 
-    // Handle "Copied" message disappearing
     LaunchedEffect(showCopiedMessage) {
         if (showCopiedMessage) {
             delay(2000)
@@ -101,7 +93,6 @@ fun LobbyScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Group code display
             Card(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -122,7 +113,6 @@ fun LobbyScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // PIN display with copy button
                     Box(contentAlignment = Alignment.Center) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -141,10 +131,9 @@ fun LobbyScreen(
                                 style = MaterialTheme.typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f), // <--- ADD THIS: Makes Text expand
-                                textAlign = TextAlign.Center    // <--- ADD THIS: Centers text within its bounds
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center
                             )
-                            // The existing Spacer will now be between the expanded Text and the IconButton
                             Spacer(modifier = Modifier.width(12.dp))
                             IconButton(
                                 onClick = {
@@ -172,7 +161,6 @@ fun LobbyScreen(
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
-            // Participants section
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -205,7 +193,6 @@ fun LobbyScreen(
                     color = MaterialTheme.colorScheme.outline
                 )
             }
-            // Participants list
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -282,7 +269,6 @@ fun LobbyScreen(
                     }
                 }
             }
-            // Find beer button
             Button(
                 onClick = {
                     isLoading = true
