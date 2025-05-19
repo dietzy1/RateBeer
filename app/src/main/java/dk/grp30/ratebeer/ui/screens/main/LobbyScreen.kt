@@ -36,6 +36,7 @@ import androidx.compose.runtime.collectAsState
 import dk.grp30.ratebeer.data.firestore.GroupRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.navigation.NavController
 
 // Temporary mock data
 data class Participant(val id: String, val name: String, val isHost: Boolean = false)
@@ -47,7 +48,8 @@ fun LobbyScreen(
     groupCode: String,
     onNavigateBack: () -> Unit,
     onFindBeerClick: () -> Unit,
-    groupRepository: GroupRepository
+    groupRepository: GroupRepository,
+    navController: NavController
 ) {
     val groupFlow = remember { groupRepository.observeGroup(groupId) }
     val group by groupFlow.collectAsState(initial = null)
@@ -55,6 +57,14 @@ fun LobbyScreen(
     var isLoading by remember { mutableStateOf(false) }
     var showCopiedMessage by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
+
+    // Redirect to RateBeerScreen if selectedBeerId is set
+    LaunchedEffect(group?.selectedBeerId) {
+        val selectedBeerId = group?.selectedBeerId
+        if (!selectedBeerId.isNullOrEmpty()) {
+            navController.navigate("rateBeer/${groupId}/${selectedBeerId}")
+        }
+    }
 
     // Handle "Copied" message disappearing
     LaunchedEffect(showCopiedMessage) {
@@ -155,20 +165,7 @@ fun LobbyScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(
-                        onClick = { /* Share functionality would go here */ },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Share,
-                            contentDescription = "Share"
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Share Invite")
-                    }
+
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
