@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.data.api.Beer
 import dk.grp30.ratebeer.data.api.PunkApiService
+import dk.grp30.ratebeer.data.firestore.GroupRepository
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,15 +71,16 @@ import kotlinx.coroutines.launch
 fun FindBeerScreen(
     groupId: String,
     onNavigateBack: () -> Unit,
-    onBeerSelected: (Beer) -> Unit
+    groupRepository: dk.grp30.ratebeer.data.firestore.GroupRepository
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
     var isLoadingRandom by remember { mutableStateOf(false) }
-    var searchResults by remember { mutableStateOf<List<Beer>>(emptyList()) }
+    var searchResults by remember { mutableStateOf<List<dk.grp30.ratebeer.data.api.Beer>>(emptyList()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
+    var isSubmitting by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
@@ -148,7 +150,7 @@ fun FindBeerScreen(
                                 
                                 coroutineScope.launch {
                                     try {
-                                        val result = PunkApiService.searchBeersByName(searchQuery)
+                                        val result = dk.grp30.ratebeer.data.api.PunkApiService.searchBeersByName(searchQuery)
                                         result.fold(
                                             onSuccess = { beers ->
                                                 searchResults = beers
@@ -203,7 +205,20 @@ fun FindBeerScreen(
                             items(searchResults) { beer ->
                                 BeerListItem(
                                     beer = beer,
-                                    onClick = { onBeerSelected(beer) }
+                                    onClick = {
+                                        if (!isSubmitting) {
+                                            isSubmitting = true
+                                            coroutineScope.launch {
+                                                val result = groupRepository.selectBeerForGroup(groupId, beer.id)
+                                                isSubmitting = false
+                                                result.let {
+                                                    if (it is dk.grp30.ratebeer.data.firestore.GroupResult.Error) {
+                                                        snackbarHostState.showSnackbar(it.message)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 )
                             }
                         }

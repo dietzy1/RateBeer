@@ -23,7 +23,8 @@ data class Group(
     val hostId: String = "",
     val members: List<GroupMember> = emptyList(),
     val createdAt: Long = 0,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val selectedBeerId: String? = null
 )
 
 sealed class GroupResult {
@@ -118,5 +119,32 @@ class GroupRepository @Inject constructor() {
             }
         
         awaitClose { subscription.remove() }
+    }
+    
+    suspend fun selectBeerForGroup(groupId: String, beerId: String): GroupResult {
+        val currentUser = auth.currentUser ?: return GroupResult.Error("User not logged in")
+        
+        try {
+            val groupDoc = groupsCollection.document(groupId)
+            val group = groupDoc.get().await().toObject<Group>() 
+                ?: return GroupResult.Error("Group not found")
+            
+            // Verify that the current user is the host
+            if (group.hostId != currentUser.uid) {
+                return GroupResult.Error("Only the host can select a beer")
+            }
+            
+            // Update the selected beer
+            groupDoc.update("selectedBeerId", beerId).await()
+            
+            // Get updated group
+            val updatedGroupDoc = groupDoc.get().await()
+            val updatedGroup = updatedGroupDoc.toObject<Group>() 
+                ?: return GroupResult.Error("Failed to get updated group")
+            
+            return GroupResult.Success(updatedGroup)
+        } catch (e: Exception) {
+            return GroupResult.Error("Failed to select beer: ${e.message}")
+        }
     }
 } 

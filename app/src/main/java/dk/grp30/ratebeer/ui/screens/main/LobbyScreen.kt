@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.ContentCopy
@@ -23,17 +24,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import dk.grp30.ratebeer.data.firestore.GroupRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.navigation.NavController
 
+// Temporary mock data
 data class Participant(val id: String, val name: String, val isHost: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +48,8 @@ fun LobbyScreen(
     groupCode: String,
     onNavigateBack: () -> Unit,
     onFindBeerClick: () -> Unit,
-    groupRepository: GroupRepository
+    groupRepository: GroupRepository,
+    navController: NavController
 ) {
     val groupFlow = remember { groupRepository.observeGroup(groupId) }
     val group by groupFlow.collectAsState(initial = null)
@@ -52,6 +58,15 @@ fun LobbyScreen(
     var showCopiedMessage by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
 
+    // Redirect to RateBeerScreen if selectedBeerId is set
+    LaunchedEffect(group?.selectedBeerId) {
+        val selectedBeerId = group?.selectedBeerId
+        if (!selectedBeerId.isNullOrEmpty()) {
+            navController.navigate("rateBeer/${groupId}/${selectedBeerId}")
+        }
+    }
+
+    // Handle "Copied" message disappearing
     LaunchedEffect(showCopiedMessage) {
         if (showCopiedMessage) {
             delay(2000)
@@ -86,6 +101,7 @@ fun LobbyScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Group code display
             Card(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -106,6 +122,7 @@ fun LobbyScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    // PIN display with copy button
                     Box(contentAlignment = Alignment.Center) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -124,9 +141,10 @@ fun LobbyScreen(
                                 style = MaterialTheme.typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                                textAlign = TextAlign.Center
+                                modifier = Modifier.weight(1f), // <--- ADD THIS: Makes Text expand
+                                textAlign = TextAlign.Center    // <--- ADD THIS: Centers text within its bounds
                             )
+                            // The existing Spacer will now be between the expanded Text and the IconButton
                             Spacer(modifier = Modifier.width(12.dp))
                             IconButton(
                                 onClick = {
@@ -150,23 +168,11 @@ fun LobbyScreen(
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(
-                        onClick = { },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Share,
-                            contentDescription = "Share"
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Share Invite")
-                    }
+
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
+            // Participants section
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -199,6 +205,7 @@ fun LobbyScreen(
                     color = MaterialTheme.colorScheme.outline
                 )
             }
+            // Participants list
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -275,6 +282,7 @@ fun LobbyScreen(
                     }
                 }
             }
+            // Find beer button
             Button(
                 onClick = {
                     isLoading = true
