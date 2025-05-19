@@ -41,7 +41,7 @@ fun LobbyScreen(
     onNavigateBack: () -> Unit,
     onFindBeerClick: () -> Unit,
     groupRepository: GroupRepository,
-    onNavigateToRateBeer: (String, String) -> Unit
+    onNavigateToRoute: (String) -> Unit,
 ) {
     val groupFlow = remember { groupRepository.observeGroup(groupId) }
     val group by groupFlow.collectAsState(initial = null)
@@ -50,10 +50,13 @@ fun LobbyScreen(
     var showCopiedMessage by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
 
-    LaunchedEffect(group?.selectedBeerId) {
-        val selectedBeerId = group?.selectedBeerId
-        if (!selectedBeerId.isNullOrEmpty()) {
-            onNavigateToRateBeer(groupId, selectedBeerId)
+    // Redirect if displayed screen is not this one.
+    LaunchedEffect(group?.displayedRoute) {
+        if (group?.displayedRoute != null && group!!.displayedRoute != "") {
+            val route = group!!.displayedRoute
+            if (!route.startsWith("lobby")) {
+                onNavigateToRoute(route)
+            }
         }
     }
 

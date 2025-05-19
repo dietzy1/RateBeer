@@ -115,13 +115,9 @@ fun RateBeerNavGraph(navController: NavHostController) {
                     navController.navigate(RateBeerDestinations.FIND_BEER_ROUTE.replace("{groupId}", groupId))
                 },
                 groupRepository = groupRepository,
-                onNavigateToRateBeer = { gId, bId ->
-                    navController.navigate(
-                        RateBeerDestinations.RATE_BEER_ROUTE
-                            .replace("{groupId}", gId)
-                            .replace("{beerId}", bId)
-                    )
-                }
+                onNavigateToRoute = { route ->
+                    navController.navigate(route)
+                },
             )
         }
         
@@ -156,8 +152,9 @@ fun RateBeerNavGraph(navController: NavHostController) {
                     ) {
                         popUpTo(RateBeerDestinations.FIND_BEER_ROUTE) { inclusive = true }
                     }
-                }
-            )
+                },
+                groupRepository = groupRepository,
+                )
         }
         
         composable(RateBeerDestinations.VOTE_ENDED_ROUTE) { backStackEntry ->
@@ -176,8 +173,12 @@ fun RateBeerNavGraph(navController: NavHostController) {
                     navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
                         popUpTo(RateBeerDestinations.MAIN_ROUTE) { inclusive = true }
                     }
-                }
-            )
+                },
+                onNavigateToRoute = { route ->
+                    navController.navigate(route)
+                },
+                groupRepository = groupRepository,
+                )
         }
     }
 }

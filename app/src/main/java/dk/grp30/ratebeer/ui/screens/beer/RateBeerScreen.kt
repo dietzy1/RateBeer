@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,15 +53,20 @@ import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 import kotlinx.coroutines.launch
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import dk.grp30.ratebeer.data.firestore.GroupRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RateBeerScreen(
     groupId: String,
     beerId: String,
+    groupRepository: GroupRepository,
     beerRatingRepository: BeerRatingRepository,
-    onVoteSubmitted: (Int) -> Unit
+    onVoteSubmitted: (Int) -> Unit,
 ) {
+    val groupFlow = remember { groupRepository.observeGroup(groupId) }
+    val group by groupFlow.collectAsState(initial = null)
+
     var isLoading by remember { mutableStateOf(true) }
     var beer by remember { mutableStateOf<Beer?>(null) }
     var rating by remember { mutableIntStateOf(0) }
@@ -70,6 +76,21 @@ fun RateBeerScreen(
     val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
+    val groupRatingFlow = remember { beerRatingRepository.observeGroupRating(groupId, beerId) }
+    val groupRatingState by groupRatingFlow.collectAsState(initial = null)
+
+    // If everyone has rated, then we redirect
+    LaunchedEffect(group?.members?.size == groupRatingState?.userRatings?.size) {
+        val memberCount = group?.members?.size
+        val ratingsCount = groupRatingState?.userRatings?.size
+
+        if (memberCount != null && ratingsCount != null && memberCount == ratingsCount) {
+            groupRepository.gotoVoteEnded(groupId, beerId)
+        }
+    }
+
+
+    // Convert beerId from String to Int for API call
     LaunchedEffect(beerId) {
         isLoading = true
         errorMessage = null
@@ -260,7 +281,6 @@ fun RateBeerScreen(
                                 val result = beerRatingRepository.submitRating(groupId, beerId, newRating)
                                 isSubmitting = false
                                 if (result is dk.grp30.ratebeer.data.firestore.RatingResult.Success) {
-                                    onVoteSubmitted(newRating)
                                 } else if (result is dk.grp30.ratebeer.data.firestore.RatingResult.Error) {
                                     snackbarHostState.showSnackbar(result.message)
                                 }

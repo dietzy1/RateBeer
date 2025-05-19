@@ -205,7 +205,7 @@ fun FindBeerScreen(
                                         if (!isSubmitting) {
                                             isSubmitting = true
                                             coroutineScope.launch {
-                                                val result = groupRepository.selectBeerForGroup(groupId, beer.id.toString())
+                                                val result = groupRepository.gotoRate(groupId, beer.id.toString())
                                                 isSubmitting = false
                                                 result.let {
                                                     if (it is dk.grp30.ratebeer.data.firestore.GroupResult.Error) {

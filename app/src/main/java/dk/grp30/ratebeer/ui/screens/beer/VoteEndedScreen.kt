@@ -53,16 +53,23 @@ import dk.grp30.ratebeer.data.api.PunkApiService
 import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
+import dk.grp30.ratebeer.data.firestore.GroupRepository
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoteEndedScreen(
     groupId: String,
     beerId: String,
+    groupRepository: GroupRepository,
     beerRatingRepository: BeerRatingRepository,
     onRateNextBeer: () -> Unit,
-    onLeaveGroup: () -> Unit
+    onLeaveGroup: () -> Unit,
+    onNavigateToRoute: (String) -> Unit,
 ) {
+    val groupFlow = remember { groupRepository.observeGroup(groupId) }
+    val group by groupFlow.collectAsState(initial = null)
+
     var isLoading by remember { mutableStateOf(true) }
     var beer by remember { mutableStateOf<Beer?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -76,6 +83,18 @@ fun VoteEndedScreen(
 
     var globalAverage by remember { mutableStateOf<Double?>(null) }
 
+    // Redirect if displayed screen is not this one.
+    LaunchedEffect(group?.displayedRoute) {
+        if (group?.displayedRoute != null && group!!.displayedRoute != "") {
+            val route = group!!.displayedRoute
+            if (!route.startsWith("vote_ended")) {
+                onNavigateToRoute(route)
+            }
+        }
+    }
+
+
+    // Fetch global average
     LaunchedEffect(beerId) {
         isLoading = true
         errorMessage = null
