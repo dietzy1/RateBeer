@@ -1,8 +1,5 @@
 package dk.grp30.ratebeer.ui.screens.register
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,7 +26,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -55,7 +51,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -270,7 +265,7 @@ fun RegisterScreen(
                             horizontalAlignment = Alignment.Start
                         ) {
                             LinearProgressIndicator(
-                                progress = passwordStrength,
+                                progress = { passwordStrength },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(4.dp)
@@ -279,7 +274,7 @@ fun RegisterScreen(
                                     passwordStrength < 0.3f -> colorScheme.error
                                     passwordStrength < 0.7f -> colorScheme.tertiary
                                     else -> colorScheme.primary
-                                }
+                                },
                             )
                             
                             Spacer(modifier = Modifier.height(4.dp))

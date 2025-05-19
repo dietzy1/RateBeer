@@ -53,7 +53,6 @@ import dk.grp30.ratebeer.data.api.PunkApiService
 import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -287,50 +286,48 @@ fun RatingDisplay(
     ) {
         for (i in 1..maxRating) {
             val starFill = minOf(maxOf(rating - (i - 1), 0.0), 1.0)
-            if (starFill == 1.0) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = Color(0xFFAB7B00),
-                    modifier = Modifier.size(starSize.dp)
-                )
-            } else if (starFill == 0.0) {
-                Icon(
-                    imageVector = Icons.Outlined.Star,
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(starSize.dp)
-                )
-            } else {
-                Box(
-                    modifier = Modifier.size(starSize.dp)
-                ) {
+            when (starFill) {
+                1.0 -> {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFAB7B00),
+                        modifier = Modifier.size(starSize.dp)
+                    )
+                }
+                0.0 -> {
                     Icon(
                         imageVector = Icons.Outlined.Star,
                         contentDescription = null,
                         tint = Color.Gray,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.size(starSize.dp)
                     )
+                }
+                else -> {
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize(starFill.toFloat())
-                            .align(Alignment.CenterStart)
+                        modifier = Modifier.size(starSize.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.Star,
+                            imageVector = Icons.Outlined.Star,
                             contentDescription = null,
-                            tint = Color(0xFFAB7B00),
+                            tint = Color.Gray,
                             modifier = Modifier.fillMaxSize()
                         )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(starFill.toFloat())
+                                .align(Alignment.CenterStart)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFAB7B00),
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 }
             }
         }
     }
-}
-
-fun Double.roundTo(decimals: Int): Double {
-    var multiplier = 1.0
-    repeat(decimals) { multiplier *= 10 }
-    return (this * multiplier).roundToInt() / multiplier
 }

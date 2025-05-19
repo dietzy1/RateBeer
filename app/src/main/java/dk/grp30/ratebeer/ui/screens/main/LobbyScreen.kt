@@ -33,8 +33,6 @@ import dk.grp30.ratebeer.data.firestore.GroupRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 
-data class Participant(val id: String, val name: String, val isHost: Boolean = false)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LobbyScreen(

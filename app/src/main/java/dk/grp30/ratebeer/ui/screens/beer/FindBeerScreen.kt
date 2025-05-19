@@ -25,11 +25,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.LocalDrink
 import androidx.compose.material.icons.outlined.Percent
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,7 +43,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,7 +58,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dk.grp30.ratebeer.data.api.Beer
-import dk.grp30.ratebeer.data.api.PunkApiService
 import dk.grp30.ratebeer.data.firestore.GroupRepository
 import kotlinx.coroutines.launch
 
@@ -71,13 +66,13 @@ import kotlinx.coroutines.launch
 fun FindBeerScreen(
     groupId: String,
     onNavigateBack: () -> Unit,
-    groupRepository: dk.grp30.ratebeer.data.firestore.GroupRepository,
+    groupRepository: GroupRepository,
     onNavigateToRateBeer: (String, String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
     var isLoadingRandom by remember { mutableStateOf(false) }
-    var searchResults by remember { mutableStateOf<List<dk.grp30.ratebeer.data.api.Beer>>(emptyList()) }
+    var searchResults by remember { mutableStateOf<List<Beer>>(emptyList()) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val keyboardController = LocalSoftwareKeyboardController.current
