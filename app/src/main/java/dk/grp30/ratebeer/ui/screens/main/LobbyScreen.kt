@@ -140,8 +140,11 @@ fun LobbyScreen(
                                 text = groupCode,
                                 style = MaterialTheme.typography.displaySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f), // <--- ADD THIS: Makes Text expand
+                                textAlign = TextAlign.Center    // <--- ADD THIS: Centers text within its bounds
                             )
+                            // The existing Spacer will now be between the expanded Text and the IconButton
                             Spacer(modifier = Modifier.width(12.dp))
                             IconButton(
                                 onClick = {

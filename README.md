@@ -30,15 +30,6 @@ A social beer tasting app built with Kotlin, Jetpack Compose, and Firebase.
 5. Create a Firestore database in the Firebase Console
    - Start in test mode for simplicity during development
 
-### Untappd API
-
-1. Register for an Untappd API key at [https://untappd.com/api/docs](https://untappd.com/api/docs)
-2. Replace the placeholder values in `UntappdApiService.kt` with your actual API credentials:
-   ```kotlin
-   private const val CLIENT_ID = "YOUR_CLIENT_ID"
-   private const val CLIENT_SECRET = "YOUR_CLIENT_SECRET"
-   ```
-
 ### Building and Running
 
 1. Open the project in Android Studio
