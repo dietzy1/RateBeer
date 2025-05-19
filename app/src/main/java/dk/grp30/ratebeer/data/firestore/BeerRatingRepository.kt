@@ -47,7 +47,6 @@ class BeerRatingRepository @Inject constructor() {
         val currentUser = auth.currentUser ?: return RatingResult.Error("User not logged in")
         
         try {
-            // Create or find the group rating document
             val querySnapshot = ratingsCollection
                 .whereEqualTo("groupId", groupId)
                 .whereEqualTo("beerId", beerId)
@@ -64,7 +63,6 @@ class BeerRatingRepository @Inject constructor() {
             )
             
             if (querySnapshot.isEmpty) {
-                // Create a new group rating
                 val groupRating = GroupBeerRating(
                     beerId = beerId,
                     groupId = groupId,
@@ -81,24 +79,19 @@ class BeerRatingRepository @Inject constructor() {
                 
                 return RatingResult.Success(groupRatingWithId)
             } else {
-                // Update existing group rating
                 val groupRatingDoc = querySnapshot.documents.first()
                 val groupRating = groupRatingDoc.toObject<GroupBeerRating>() 
                     ?: return RatingResult.Error("Invalid group rating data")
                 
-                // Check if user already rated
                 val existingRatingIndex = groupRating.userRatings.indexOfFirst { it.userId == currentUser.uid }
                 
                 if (existingRatingIndex >= 0) {
-                    // Update user's existing rating
                     val updatedUserRatings = groupRating.userRatings.toMutableList()
                     updatedUserRatings[existingRatingIndex] = userRating
                     
-                    // Recalculate average
                     val totalRating = updatedUserRatings.sumOf { it.rating }
                     val newAverage = totalRating.toDouble() / updatedUserRatings.size
                     
-                    // Update document
                     groupRatingDoc.reference.update(
                         mapOf(
                             "userRatings" to updatedUserRatings,
@@ -106,12 +99,10 @@ class BeerRatingRepository @Inject constructor() {
                         )
                     ).await()
                 } else {
-                    // Add new rating
                     val newRatingCount = groupRating.ratingCount + 1
                     val totalRating = (groupRating.averageRating * groupRating.ratingCount) + rating
                     val newAverage = totalRating / newRatingCount
                     
-                    // Update document
                     groupRatingDoc.reference.update(
                         mapOf(
                             "userRatings" to FieldValue.arrayUnion(userRating),
@@ -121,7 +112,6 @@ class BeerRatingRepository @Inject constructor() {
                     ).await()
                 }
                 
-                // Get updated group rating
                 val updatedDoc = groupRatingDoc.reference.get().await()
                 val updatedGroupRating = updatedDoc.toObject<GroupBeerRating>()
                     ?: return RatingResult.Error("Failed to get updated group rating")

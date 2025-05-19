@@ -9,31 +9,22 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
-/**
- * Data class representing a beer from the Punk API
- */
 data class Beer(
     val id: Int,
     val name: String,
     val tagline: String,
     val first_brewed: String,
     val description: String,
-    val image: String, //This is an ID for the image, not the actual URL
+    val image: String,
     val abv: Double,
     val ibu: Double?,
     val ebc: Double?,
 ) {
-    /**
-     * Helper function to get the properly formatted image URL from the Punk API
-     */
     fun getFormattedImageUrl(): String {
         return "https://punkapi.online/v3/images/${String.format("%03d", id)}.png"
     }
 }
 
-/**
- * Interface defining the Punk API endpoints
- */
 interface PunkApi {
     @GET("beers")
     suspend fun searchBeersByName(
@@ -46,9 +37,6 @@ interface PunkApi {
     suspend fun getBeerById(@Path("id") beerId: Int): Beer
 }
 
-/**
- * Singleton service object for the Punk API
- */
 object PunkApiService {
     private const val BASE_URL = "https://punkapi.online/v3/"
     
@@ -70,9 +58,6 @@ object PunkApiService {
     
     val api: PunkApi = retrofit.create(PunkApi::class.java)
 
-    /**
-     * Search for beers by name
-     */
     suspend fun searchBeersByName(query: String, page: Int = 1, perPage: Int = 30): Result<List<Beer>> {
         return try {
             val beers = api.searchBeersByName(query, page, perPage)
@@ -81,10 +66,7 @@ object PunkApiService {
             Result.failure(e)
         }
     }
-    
-    /**
-     * Get a beer by its ID
-     */
+
     suspend fun getBeerById(beerId: Int): Result<Beer> {
         return try {
             val response = api.getBeerById(beerId)

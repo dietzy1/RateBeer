@@ -1,10 +1,6 @@
 package dk.grp30.ratebeer.ui.screens.main
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -76,14 +71,12 @@ fun MainScreen(
     val colorScheme = MaterialTheme.colorScheme
     val uiState by viewModel.uiState.collectAsState()
 
-    // Handle navigation
     LaunchedEffect(uiState.groupId, uiState.groupCode) {
         if (uiState.groupId != null && uiState.groupCode != null) {
             onNavigateToLobby(uiState.groupId!!, uiState.groupCode!!)
         }
     }
 
-    // Show error snackbar if needed
     LaunchedEffect(uiState.error) {
         uiState.error?.let { errorMsg ->
             coroutineScope.launch {
@@ -120,7 +113,6 @@ fun MainScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        // Main content with background gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -142,7 +134,6 @@ fun MainScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // App logo and intro
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -178,7 +169,6 @@ fun MainScreen(
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 
-                // Create group card
                 ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -281,7 +271,6 @@ fun MainScreen(
                     )
                 }
                 
-                // Join group card
                 ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth(),
@@ -340,7 +329,6 @@ fun MainScreen(
                         OutlinedTextField(
                             value = groupCode,
                             onValueChange = { 
-                                // Only allow digits and limit to 6 characters
                                 if (it.length <= 6 && it.all { char -> char.isDigit() }) {
                                     groupCode = it
                                 }

@@ -110,7 +110,6 @@ fun FindBeerScreen(
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Search bar with improved styling
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -147,7 +146,6 @@ fun FindBeerScreen(
                                 isSearching = true
                                 keyboardController?.hide()
                                 
-                                // Use Punk API service to search for beers by name
                                 coroutineScope.launch {
                                     try {
                                         val result = PunkApiService.searchBeersByName(searchQuery)
@@ -176,22 +174,18 @@ fun FindBeerScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Search results with improved visuals
                 if (!isSearching && !isLoadingRandom) {
                     if (searchResults.isEmpty() && searchQuery.isBlank()) {
-                        // Initial state with better visual guidance
                         EmptyStateView(
                             message = "Search for a beer by name or get a random beer recommendation",
                             icon = Icons.Outlined.LocalDrink
                         )
                     } else if (searchResults.isEmpty() && searchQuery.isNotBlank()) {
-                        // No results with better visual feedback
                         EmptyStateView(
                             message = "No beers found matching '$searchQuery'\nTry another search term",
                             icon = Icons.Default.Search
                         )
                     } else {
-                        // Show results with count
                         Text(
                             text = "Found ${searchResults.size} beer${if (searchResults.size != 1) "s" else ""}",
                             style = MaterialTheme.typography.titleMedium,
@@ -215,7 +209,6 @@ fun FindBeerScreen(
                         }
                     }
                 } else if (isSearching) {
-                    // Show loading indicator for search
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -235,7 +228,6 @@ fun FindBeerScreen(
                         )
                     }
                 } else if (isLoadingRandom) {
-                    // Show loading indicator for random beer
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -334,13 +326,11 @@ fun BeerListItem(
                     )
                 }
                 
-                // ABV Badge instead of rating
                 AbvBadge(abv = beer.abv)
             }
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Info row with ABV and first brewed date
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -351,7 +341,6 @@ fun BeerListItem(
                     )
                     .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                // First brewed date
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
@@ -372,7 +361,6 @@ fun BeerListItem(
                     )
                 }
                 
-                // IBU if available
                 beer.ibu?.let { ibu ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically

@@ -42,7 +42,6 @@ class GroupRepository @Inject constructor() {
         val currentUser = auth.currentUser ?: return GroupResult.Error("User not logged in")
         
         try {
-            // Create group
             val group = Group(
                 groupCode = groupCode,
                 hostId = currentUser.uid,
@@ -71,7 +70,6 @@ class GroupRepository @Inject constructor() {
         val currentUser = auth.currentUser ?: return GroupResult.Error("User not logged in")
         
         try {
-            // Find group by code
             val querySnapshot = groupsCollection
                 .whereEqualTo("groupCode", groupCode)
                 .whereEqualTo("active", true)
@@ -85,12 +83,10 @@ class GroupRepository @Inject constructor() {
             val groupDoc = querySnapshot.documents.first()
             val group = groupDoc.toObject<Group>() ?: return GroupResult.Error("Invalid group data")
             
-            // Check if user is already a member
             if (group.members.any { it.id == currentUser.uid }) {
                 return GroupResult.Success(group)
             }
             
-            // Add user to group
             val newMember = GroupMember(
                 id = currentUser.uid,
                 name = currentUser.displayName ?: "User",
@@ -99,7 +95,6 @@ class GroupRepository @Inject constructor() {
             
             groupDoc.reference.update("members", FieldValue.arrayUnion(newMember)).await()
             
-            // Get updated group
             val updatedGroupDoc = groupDoc.reference.get().await()
             val updatedGroup = updatedGroupDoc.toObject<Group>() 
                 ?: return GroupResult.Error("Failed to get updated group")

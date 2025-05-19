@@ -52,7 +52,6 @@ import dk.grp30.ratebeer.data.api.Beer
 import dk.grp30.ratebeer.data.api.PunkApiService
 import dk.grp30.ratebeer.data.firestore.BeerRatingRepository
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.runtime.collectAsState
 import kotlin.math.roundToInt
 
@@ -72,25 +71,17 @@ fun VoteEndedScreen(
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    // Group rating state
     val groupRatingFlow = remember { beerRatingRepository.observeGroupRating(groupId, beerId) }
     val groupRatingState by groupRatingFlow.collectAsState(initial = null)
     val groupAverage = groupRatingState?.averageRating ?: 0.0
 
-    // Global average state
     var globalAverage by remember { mutableStateOf<Double?>(null) }
 
-    // Fetch global average
     LaunchedEffect(beerId) {
         isLoading = true
         errorMessage = null
         try {
-            // Parse beerId to Int
-            val beerIdInt = beerId.toIntOrNull()
-            if (beerIdInt == null) {
-                throw IllegalArgumentException("Invalid beer ID format")
-            }
-            // Fetch beer details from API
+            val beerIdInt = beerId.toIntOrNull() ?: throw IllegalArgumentException("Invalid beer ID format")
             val result = PunkApiService.getBeerById(beerIdInt)
             result.fold(
                 onSuccess = { fetchedBeer -> beer = fetchedBeer },
@@ -99,7 +90,6 @@ fun VoteEndedScreen(
                     coroutineScope.launch { snackbarHostState.showSnackbar(errorMessage ?: "Unknown error occurred") }
                 }
             )
-            // Fetch global average using repository
             globalAverage = beerRatingRepository.getGlobalAverageForBeer(beerId)
         } catch (e: Exception) {
             errorMessage = "Error: ${e.message}"
@@ -124,7 +114,6 @@ fun VoteEndedScreen(
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
-                // Loading state
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -135,7 +124,6 @@ fun VoteEndedScreen(
                     Text("Loading results...")
                 }
             } else if (beer != null) {
-                // Results content
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -144,7 +132,6 @@ fun VoteEndedScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     if (beer?.image != null) {
-                        // Load image from URL using Coil
                         Image(
                             painter = rememberAsyncImagePainter(
                                 ImageRequest.Builder(context)
@@ -156,7 +143,6 @@ fun VoteEndedScreen(
                             contentScale = ContentScale.Fit
                         )
                     } else {
-                        // Fallback placeholder image
                         Image(
                             painter = painterResource(id = R.drawable.beer_placeholder),
                             contentDescription = beer?.name,
@@ -167,7 +153,6 @@ fun VoteEndedScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Beer name
                     Text(
                         text = beer?.name ?: "",
                         style = MaterialTheme.typography.titleLarge,
@@ -177,7 +162,6 @@ fun VoteEndedScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Results comparison
                     Card(
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -194,7 +178,6 @@ fun VoteEndedScreen(
 
                             Spacer(modifier = Modifier.height(24.dp))
 
-                            // Group rating
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
@@ -221,7 +204,6 @@ fun VoteEndedScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Global average
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
@@ -248,7 +230,6 @@ fun VoteEndedScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // Comparison text
                             val comparisonText = if (globalAverage != null && groupRatingState != null) {
                                 val diff = groupAverage - globalAverage!!
                                 when {
@@ -269,7 +250,6 @@ fun VoteEndedScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    // Action buttons
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

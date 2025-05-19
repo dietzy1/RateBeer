@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// UI state for group creation/joining
 data class GroupUiState(
     val isLoading: Boolean = false,
     val groupId: String? = null,

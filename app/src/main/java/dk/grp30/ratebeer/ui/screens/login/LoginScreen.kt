@@ -40,7 +40,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -56,7 +55,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -67,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dk.grp30.ratebeer.data.auth.AuthRepository
 import dk.grp30.ratebeer.data.auth.AuthResult
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,7 +72,7 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     onNavigateBack: () -> Unit,
     onLoginSuccess: () -> Unit,
-    onNavigateToSignup: () -> Unit = {}, // New parameter for signup navigation
+    onNavigateToSignup: () -> Unit = {},
     authRepository: AuthRepository
 ) {
     var email by remember { mutableStateOf("") }
@@ -85,7 +82,6 @@ fun LoginScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     
-    // Check if user is already logged in
     LaunchedEffect(key1 = true) {
         if (authRepository.isUserLoggedIn) {
             onLoginSuccess()
@@ -114,7 +110,6 @@ fun LoginScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        // Main content with background gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -136,7 +131,6 @@ fun LoginScreen(
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Logo area
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -172,7 +166,6 @@ fun LoginScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Login card
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -188,7 +181,6 @@ fun LoginScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Email field with improved styling
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -209,7 +201,6 @@ fun LoginScreen(
                             shape = RoundedCornerShape(12.dp)
                         )
                         
-                        // Password field with improved styling
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
@@ -240,12 +231,11 @@ fun LoginScreen(
                             shape = RoundedCornerShape(12.dp)
                         )
                         
-                        // Forgot password link
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End
                         ) {
-                            TextButton(onClick = { /* TODO: Implement forgot password */ }) {
+                            TextButton(onClick = { }) {
                                 Text(
                                     "Forgot Password?",
                                     color = colorScheme.primary,
@@ -254,10 +244,8 @@ fun LoginScreen(
                             }
                         }
                         
-                        // Login button with animation
                         Button(
                             onClick = {
-                                // Validate inputs
                                 if (email.isBlank() || password.isBlank()) {
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Please fill in all fields")
@@ -265,10 +253,8 @@ fun LoginScreen(
                                     return@Button
                                 }
                                 
-                                // Show loading and attempt login
                                 isLoading = true
                                 
-                                // Use Firebase authentication via the repository
                                 coroutineScope.launch {
                                     val result = authRepository.login(email, password)
                                     isLoading = false
@@ -308,7 +294,6 @@ fun LoginScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Divider with "or" text
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -331,7 +316,6 @@ fun LoginScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Sign up suggestion
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,

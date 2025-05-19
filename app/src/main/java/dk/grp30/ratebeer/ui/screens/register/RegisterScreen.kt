@@ -73,7 +73,7 @@ import kotlinx.coroutines.launch
 fun RegisterScreen(
     onNavigateBack: () -> Unit,
     onRegistrationSuccess: () -> Unit,
-    onNavigateToLogin: () -> Unit = {}, // New parameter for login navigation
+    onNavigateToLogin: () -> Unit = {},
     authRepository: AuthRepository
 ) {
     var username by remember { mutableStateOf("") }
@@ -84,35 +84,21 @@ fun RegisterScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     
-    // Password strength indicator
     var passwordStrength by remember { mutableFloatStateOf(0f) }
     
-    // Calculate password strength when password changes
     fun calculatePasswordStrength(pwd: String): Float {
         if (pwd.isEmpty()) return 0f
-        
         var strength = 0f
-        
-        // Length check
         strength += minOf(0.3f, pwd.length * 0.03f)
-        
-        // Has uppercase
         if (pwd.any { it.isUpperCase() }) strength += 0.2f
-        
-        // Has lowercase
         if (pwd.any { it.isLowerCase() }) strength += 0.2f
-        
-        // Has digit
         if (pwd.any { it.isDigit() }) strength += 0.2f
-        
-        // Has special character
         if (pwd.any { !it.isLetterOrDigit() }) strength += 0.2f
         
         return minOf(1f, strength)
     }
     
-    // Update password strength when password changes
-    password.let { 
+    password.let {
         passwordStrength = calculatePasswordStrength(it)
     }
     
@@ -138,7 +124,6 @@ fun RegisterScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        // Main content with background gradient
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -160,7 +145,6 @@ fun RegisterScreen(
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Logo area
                 Box(
                     modifier = Modifier
                         .size(70.dp)
@@ -196,7 +180,6 @@ fun RegisterScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                // Registration card
                 ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -212,7 +195,6 @@ fun RegisterScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Username field with improved styling
                         OutlinedTextField(
                             value = username,
                             onValueChange = { username = it },
@@ -233,7 +215,6 @@ fun RegisterScreen(
                             shape = RoundedCornerShape(12.dp)
                         )
                         
-                        // Email field with improved styling
                         OutlinedTextField(
                             value = email,
                             onValueChange = { email = it },
@@ -254,7 +235,6 @@ fun RegisterScreen(
                             shape = RoundedCornerShape(12.dp)
                         )
                         
-                        // Password field with improved styling
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
@@ -285,7 +265,6 @@ fun RegisterScreen(
                             shape = RoundedCornerShape(12.dp)
                         )
                         
-                        // Password strength indicator
                         Column(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.Start
@@ -324,7 +303,6 @@ fun RegisterScreen(
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Terms & Privacy policy text
                         Text(
                             text = "By signing up, you agree to our Terms of Service and Privacy Policy",
                             style = MaterialTheme.typography.bodySmall,
@@ -334,10 +312,8 @@ fun RegisterScreen(
                         
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        // Register button with animation
                         Button(
                             onClick = {
-                                // Validate inputs
                                 if (username.isBlank() || email.isBlank() || password.isBlank()) {
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Please fill in all fields")
@@ -345,7 +321,6 @@ fun RegisterScreen(
                                     return@Button
                                 }
                                 
-                                // Simple email validation
                                 if (!email.contains("@") || !email.contains(".")) {
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Please enter a valid email address")
@@ -353,7 +328,6 @@ fun RegisterScreen(
                                     return@Button
                                 }
                                 
-                                // Password length validation
                                 if (password.length < 6) {
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Password must be at least 6 characters")
@@ -361,10 +335,8 @@ fun RegisterScreen(
                                     return@Button
                                 }
                                 
-                                // Show loading and attempt registration
                                 isLoading = true
                                 
-                                // Use Firebase authentication via the repository
                                 coroutineScope.launch {
                                     val result = authRepository.register(email, password, username)
                                     isLoading = false
@@ -404,7 +376,6 @@ fun RegisterScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
                 
-                // Already have an account suggestion
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,

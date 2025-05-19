@@ -16,7 +16,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Beer-themed colors
 private val primaryColor = Color(0xFFAB7B00) // Amber/golden beer color
 private val onPrimaryColor = Color(0xFFFFFFFF)
 private val primaryContainerColor = Color(0xFFF5D485) // Light beer foam color

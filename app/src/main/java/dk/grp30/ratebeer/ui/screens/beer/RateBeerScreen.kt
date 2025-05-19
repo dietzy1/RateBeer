@@ -70,20 +70,13 @@ fun RateBeerScreen(
     val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
-    // Convert beerId from String to Int for API call
     LaunchedEffect(beerId) {
         isLoading = true
         errorMessage = null
 
         try {
-            // Parse beerId to Int
-            val beerIdInt = beerId.toIntOrNull()
+            val beerIdInt = beerId.toIntOrNull() ?: throw IllegalArgumentException("Invalid beer ID format")
 
-            if (beerIdInt == null) {
-                throw IllegalArgumentException("Invalid beer ID format")
-            }
-
-            // Fetch beer details from API
             val result = PunkApiService.getBeerById(beerIdInt)
 
             result.fold(
@@ -122,7 +115,6 @@ fun RateBeerScreen(
             contentAlignment = Alignment.Center
         ) {
             if (isLoading) {
-                // Loading state
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -133,7 +125,6 @@ fun RateBeerScreen(
                     Text("Loading beer details...")
                 }
             } else if (errorMessage != null) {
-                // Error state
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(16.dp)
@@ -146,7 +137,6 @@ fun RateBeerScreen(
                     )
                 }
             } else if (beer != null) {
-                // Beer details
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -154,14 +144,12 @@ fun RateBeerScreen(
                         .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Beer image
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
                     ) {
                         if (beer?.image != null) {
-                            // Load image from URL using Coil
                             Image(
                                 painter = rememberAsyncImagePainter(
                                     ImageRequest.Builder(context)
@@ -173,7 +161,6 @@ fun RateBeerScreen(
                                 contentScale = ContentScale.Fit
                             )
                         } else {
-                            // Fallback placeholder image
                             Image(
                                 painter = painterResource(id = R.drawable.beer_placeholder),
                                 contentDescription = beer?.name,
@@ -185,7 +172,6 @@ fun RateBeerScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Beer name
                     Text(
                         text = beer?.name ?: "",
                         style = MaterialTheme.typography.titleLarge,
@@ -195,7 +181,6 @@ fun RateBeerScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Tagline
                     Text(
                         text = beer?.tagline ?: "",
                         style = MaterialTheme.typography.titleMedium,
@@ -205,7 +190,6 @@ fun RateBeerScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Beer details
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center
@@ -250,7 +234,6 @@ fun RateBeerScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Description
                     Text(
                         text = beer?.description ?: "",
                         style = MaterialTheme.typography.bodyMedium,
@@ -260,7 +243,6 @@ fun RateBeerScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Rating section
                     Text(
                         text = "Your Rating",
                         style = MaterialTheme.typography.titleMedium,
@@ -269,7 +251,6 @@ fun RateBeerScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Star rating
                     StarRating(
                         rating = rating,
                         onRatingChanged = { newRating ->
@@ -295,7 +276,6 @@ fun RateBeerScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Rating text
                     Text(
                         text = when (rating) {
                             0 -> "Tap a star to rate"

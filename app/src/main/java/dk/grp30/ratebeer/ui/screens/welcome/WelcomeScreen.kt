@@ -40,7 +40,6 @@ fun WelcomeScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Background image with overlay
             Image(
                 painter = painterResource(id = R.drawable.beer_placeholder),
                 contentDescription = null,
@@ -62,7 +61,6 @@ fun WelcomeScreen(
 
                 Spacer(modifier = Modifier.weight(0.2f))
 
-                // Title with more prominent styling
                 Text(
                     text = "RateBeer",
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -82,7 +80,6 @@ fun WelcomeScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Card to hold buttons with a slight background
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -100,7 +97,6 @@ fun WelcomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Login button with primary color
                         Button(
                             onClick = onLoginClick,
                             modifier = Modifier
@@ -117,7 +113,6 @@ fun WelcomeScreen(
                             )
                         }
 
-                        // Register as outlined button for visual hierarchy
                         OutlinedButton(
                             onClick = onRegisterClick,
                             modifier = Modifier
@@ -137,10 +132,6 @@ fun WelcomeScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-
-
-
             }
         }
     }

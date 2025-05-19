@@ -37,7 +37,6 @@ fun RateBeerNavGraph(navController: NavHostController) {
     val groupRepository = remember { dk.grp30.ratebeer.data.firestore.GroupRepository() }
     val beerRatingRepository = remember { BeerRatingRepository() }
     
-    // Check if user is already logged in, if so navigate directly to main screen
     LaunchedEffect(key1 = true) {
         if (authRepository.isUserLoggedIn) {
             navController.navigate(RateBeerDestinations.MAIN_ROUTE) {
@@ -80,7 +79,6 @@ fun RateBeerNavGraph(navController: NavHostController) {
         }
         
         composable(RateBeerDestinations.MAIN_ROUTE) {
-            // Check if the user is authenticated, if not navigate back to welcome screen
             LaunchedEffect(key1 = true) {
                 if (!authRepository.isUserLoggedIn) {
                     navController.navigate(RateBeerDestinations.WELCOME_ROUTE) {
