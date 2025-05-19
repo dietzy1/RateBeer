@@ -49,7 +49,7 @@ fun LobbyScreen(
     onNavigateBack: () -> Unit,
     onFindBeerClick: () -> Unit,
     groupRepository: GroupRepository,
-    navController: NavController
+    onNavigateToRateBeer: (String, String) -> Unit
 ) {
     val groupFlow = remember { groupRepository.observeGroup(groupId) }
     val group by groupFlow.collectAsState(initial = null)
@@ -62,7 +62,7 @@ fun LobbyScreen(
     LaunchedEffect(group?.selectedBeerId) {
         val selectedBeerId = group?.selectedBeerId
         if (!selectedBeerId.isNullOrEmpty()) {
-            navController.navigate("rateBeer/${groupId}/${selectedBeerId}")
+            onNavigateToRateBeer(groupId, selectedBeerId)
         }
     }
 
