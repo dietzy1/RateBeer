@@ -74,7 +74,7 @@ class GroupRepository @Inject constructor() {
             // Find group by code
             val querySnapshot = groupsCollection
                 .whereEqualTo("groupCode", groupCode)
-                .whereEqualTo("isActive", true)
+                .whereEqualTo("active", true)
                 .get()
                 .await()
             
